@@ -17,7 +17,7 @@
  */
 const CloudSync = {
     // 代理地址（部署 Worker 后填入；也可在后台"数据同步"面板里改）
-    _defaultWorker: 'https://lecang-sync.workers.dev',
+    _defaultWorker: 'https://lecang-sync.gaojieyou9.workers.dev',
 
     config: { workerUrl: '', adminKey: '' },
 
