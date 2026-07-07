@@ -65,6 +65,7 @@
             width: 44px;
             height: 44px;
             border-radius: 10px;
+            object-fit: contain;
         }
 
         .sidebar-header h1 {
@@ -1177,17 +1178,26 @@
                     </div>
                 </div>
 
-                <!-- ====== Big Action Buttons ====== -->
-                <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div style="padding:28px 20px;background:linear-gradient(135deg,rgba(201,169,97,0.15),rgba(201,169,97,0.05));border-radius:16px;text-align:center;border:2px solid rgba(201,169,97,0.3);cursor:pointer;transition:all 0.2s;" onclick="syncToCloud()" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(201,169,97,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-                        <div style="font-size:44px;">☁️⬆️</div>
-                        <div style="font-size:18px;font-weight:700;color:var(--ink);margin-top:10px;">上传到云端</div>
-                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把本机的网站内容和<br>客户咨询推送到云端</div>
+                <!-- ====== 双向同步（核心） ====== -->
+                <div style="margin-top:16px;">
+                    <div style="padding:24px 20px;background:linear-gradient(135deg,rgba(166,38,32,0.12),rgba(201,169,97,0.08));border-radius:16px;text-align:center;border:2px solid rgba(166,38,32,0.35);cursor:pointer;transition:all 0.2s;" onclick="doSync('both')" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(166,38,32,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:40px;">🔄</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--ink);margin-top:8px;">双向同步（本地 ⇄ 云端）</div>
+                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">一键合并两边数据，客户线索自动去重，绝不丢失</div>
                     </div>
-                    <div style="padding:28px 20px;background:linear-gradient(135deg,rgba(74,124,89,0.12),rgba(74,124,89,0.04));border-radius:16px;text-align:center;border:2px solid rgba(74,124,89,0.25);cursor:pointer;transition:all 0.2s;" onclick="syncFromCloud()" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(74,124,89,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-                        <div style="font-size:44px;">⬇️📱</div>
-                        <div style="font-size:18px;font-weight:700;color:var(--ink);margin-top:10px;">从云端下载</div>
-                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把云端的最新数据<br>拉取到本机</div>
+                </div>
+
+                <!-- ====== 单向同步 ====== -->
+                <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div style="padding:22px 16px;background:linear-gradient(135deg,rgba(201,169,97,0.15),rgba(201,169,97,0.05));border-radius:16px;text-align:center;border:2px solid rgba(201,169,97,0.3);cursor:pointer;transition:all 0.2s;" onclick="doSync('up')" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(201,169,97,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:36px;">☁️⬆️</div>
+                        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-top:8px;">仅上传到云端</div>
+                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把本机数据推送到云端</div>
+                    </div>
+                    <div style="padding:22px 16px;background:linear-gradient(135deg,rgba(74,124,89,0.12),rgba(74,124,89,0.04));border-radius:16px;text-align:center;border:2px solid rgba(74,124,89,0.25);cursor:pointer;transition:all 0.2s;" onclick="doSync('down')" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(74,124,89,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:36px;">⬇️📱</div>
+                        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-top:8px;">仅从云端下载</div>
+                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把云端数据拉取到本机</div>
                     </div>
                 </div>
 
@@ -1200,25 +1210,91 @@
                         <h4>⚙️ 云端设置 <span class="badge" id="cloudStatusBadge">未配置</span> <span class="toggle-arrow" style="font-size:12px;color:var(--warm-brown);float:right;">▼ 展开</span></h4>
                     </div>
                     <div id="cloudConfigBody" style="display:none;padding:16px;">
-                        <p style="color:var(--warm-brown);font-size:13px;line-height:1.8;margin-bottom:16px;">
-                            云端由 Cloudflare 代理转发，<strong>网页里不含任何密钥</strong>。填入代理地址和管理密码即可（部署后只需配置一次）。
+                        <p style="color:var(--warm-brown);font-size:13px;line-height:1.8;margin-bottom:14px;">
+                            本机服务器（双击「启动网站.bat」后在线）是你的数据源；网页不含任何服务器密钥。<br>
+                            <strong>云端</strong>可选两种：① <strong>内网穿透服务器</strong>（家里常开电脑的花生壳/内网穿透地址）；② <strong>GitHub 仓库</strong>（把数据存在 GitHub，公开/私有均可，可自由增删）。<br>
+                            在每台电脑用同一个文件夹，选好云端类型、填好配置，点「双向同步」即可随时互通。
                         </p>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>云端代理地址 <span class="hint">Worker 地址</span></label>
-                                <input type="text" id="ghWorkerUrl" placeholder="https://lecang-sync.gaojieyou9.workers.dev">
-                            </div>
-                            <div class="form-group">
-                                <label>管理密码 <span class="hint">后台写操作需要</span></label>
-                                <input type="password" id="ghAdminKey" placeholder="后台管理密码">
-                            </div>
+
+                        <!-- 云端类型切换 -->
+                        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                            <button id="btnTypeServer" class="btn btn-outline btn-sm" onclick="selectCloudType('server')">🖥️ 内网穿透服务器</button>
+                            <button id="btnTypeGithub" class="btn btn-outline btn-sm" onclick="selectCloudType('github')">🐙 GitHub 云端</button>
                         </div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                            <button class="btn btn-save btn-sm" onclick="saveCloudConfig()">💾 保存配置</button>
-                            <button class="btn btn-outline btn-sm" onclick="testCloudConnection()">🔌 测试连接</button>
-                            <button class="btn btn-danger btn-sm" onclick="clearCloudConfig()">清除配置</button>
+
+                        <!-- 内网穿透服务器面板 -->
+                        <div id="panelServer" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>云端地址 <span class="hint">家里电脑的内网穿透地址</span></label>
+                                    <input type="text" id="ghWorkerUrl" placeholder="如 http://abc.cpolar.cn  （留空=仅本机）">
+                                </div>
+                                <div class="form-group">
+                                    <label>管理密码 <span class="hint">后台写操作需要</span></label>
+                                    <input type="password" id="ghAdminKey" placeholder="后台管理密码">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>花生壳访问账号 <span class="hint">隧道「访问控制」里的账号（没有则留空）</span></label>
+                                    <input type="text" id="ghAuthUser" placeholder="访问验证账号（可留空）">
+                                </div>
+                                <div class="form-group">
+                                    <label>花生壳访问密码 <span class="hint">隧道「访问验证」密码，自动带上不再弹窗</span></label>
+                                    <input type="password" id="ghAuthPass" placeholder="访问验证密码">
+                                </div>
+                            </div>
+                            <p style="color:var(--warm-brown);font-size:12px;line-height:1.7;margin:6px 0 4px;">
+                                打开网站或同步时若花生壳要求输密码，把这里的「访问账号 / 密码」填好，网站会自动带上凭据，后台同步不再被弹窗拦。
+                                想连前台打开都不弹窗，可在花生壳后台关闭该隧道的「访问验证」。
+                            </p>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                                <button class="btn btn-save btn-sm" onclick="saveCloudConfig()">💾 保存配置</button>
+                                <button class="btn btn-outline btn-sm" onclick="testCloudConnection()">🔌 测试连接</button>
+                                <button class="btn btn-danger btn-sm" onclick="clearCloudConfig()">清除配置</button>
+                            </div>
+                            <div id="cloudTestResult" style="margin-top:12px;display:none;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
                         </div>
-                        <div id="cloudTestResult" style="margin-top:12px;display:none;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
+
+                        <!-- GitHub 面板 -->
+                        <div id="panelGithub" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>GitHub 仓库 <span class="hint">owner/repo</span></label>
+                                    <input type="text" id="ghRepo" placeholder="如 yourname/lecang-deploy">
+                                </div>
+                                <div class="form-group">
+                                    <label>分支 <span class="hint">默认 main</span></label>
+                                    <input type="text" id="ghBranch" placeholder="main">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>数据文件路径 <span class="hint">仓库内相对路径</span></label>
+                                    <input type="text" id="ghPath" placeholder="data/cloud-data.json">
+                                </div>
+                                <div class="form-group">
+                                    <label>Token <span class="hint">需 repo 权限</span></label>
+                                    <input type="password" id="ghToken" placeholder="ghp_xxx 或 github_pat_xxx">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>代理 / 镜像地址 <span class="hint">国内连不上时填</span></label>
+                                    <input type="text" id="ghProxy" placeholder="如 https://ghproxy.net （留空=直连）">
+                                </div>
+                            </div>
+                            <p style="color:var(--warm-brown);font-size:12px;line-height:1.7;margin:6px 0 10px;">
+                                Token 在 GitHub → Settings → Developer settings → Personal access tokens 生成，勾选 <code>repo</code> 权限。
+                                数据会通过 GitHub API 直接写入仓库（可自由增删），同一仓库的数据对全网公开可见，敏感客户信息请改用<strong>私有仓库</strong>。
+                            </p>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                                <button class="btn btn-save btn-sm" onclick="saveGitHubConfig()">💾 保存配置</button>
+                                <button class="btn btn-outline btn-sm" onclick="testGitHubConnection()">🔌 测试连接</button>
+                                <button class="btn btn-danger btn-sm" onclick="clearGitHubConfig()">清除配置</button>
+                            </div>
+                            <div id="ghTestResult" style="margin-top:12px;display:none;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1391,16 +1467,41 @@
 
         async function checkServerStatus() {
             const statusEl = document.getElementById('serverStatus');
-            if (CloudSync.isConfigured()) {
-                const r = await CloudSync.testConnection();
-                if (r.success) {
-                    serverOnline = true;
-                    if (statusEl) statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4A7C59;margin-right:4px;vertical-align:middle;"></span>云端已连接 · 实时同步';
-                    return;
-                }
+            if (!statusEl) return;
+
+            // 1) 先检测「本机服务器」（同源 /api/status，双击启动网站.bat 后才会在线）
+            let localOnline = false;
+            try {
+                const r = await fetch('/api/status', { signal: AbortSignal.timeout(8000) });
+                const d = await r.json().catch(() => null);
+                localOnline = r.ok && d && (d.online === true || d.success === true);
+            } catch (e) { localOnline = false; }
+
+            // 2) 检测「云端」（家里常开电脑的内网穿透地址），最多等 8 秒
+            let cloudText = '';
+            if (CloudSync.hasCloud()) {
+                let cr = { success: false, error: '超时' };
+                try {
+                    cr = await Promise.race([
+                        CloudSync.testConnection(),
+                        new Promise(res => setTimeout(() => res({ success: false, error: '连接超时' }), 8000))
+                    ]);
+                } catch (e) { cr = { success: false, error: '异常' }; }
+                cloudText = cr.success
+                    ? '<span style="color:#4A7C59;">· 云端已连接</span>'
+                    : '<span style="color:#B8860B;">· 云端未连接：' + (cr.error || '地址/密码不对或家里电脑未开') + '</span>';
+            } else {
+                cloudText = '<span style="color:#B0A89C;">· 未设置云端同步</span>';
             }
-            serverOnline = false;
-            if (statusEl) statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:4px;vertical-align:middle;"></span>未连接云端 · 仅本地';
+
+            // serverOnline 表示「本机服务器是否可写」（本地增删改依赖它）
+            serverOnline = localOnline;
+
+            if (localOnline) {
+                statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4A7C59;margin-right:4px;vertical-align:middle;"></span>本机已连接 ' + cloudText;
+            } else {
+                statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:4px;vertical-align:middle;"></span>本机未连接（请先双击「启动网站.bat」）' + cloudText;
+            }
         }
 
         // ===== Load content: cloud first (if configured), then server API, fallback to localStorage =====
@@ -1476,6 +1577,8 @@
             for (const key in data) {
                 htmlData[key] = data[key];
             }
+            // 记录修改时间，作为云端合并时的“谁更新”依据
+            htmlData.updatedAt = Date.now();
             localStorage.setItem('lecang_content', JSON.stringify(htmlData));
             currentContent = data;
 
@@ -1484,12 +1587,24 @@
                 await apiPost('/api/content', htmlData);
             }
 
-            // Sync to cloud (localStorage)
-            if (CloudSync.isConfigured()) {
-                await CloudSync.writeContent(htmlData);
-                const now2 = new Date();
-                const pad2 = n => String(n).padStart(2, '0');
-                localStorage.setItem('lecang_cloud_lastsync', pad2(now2.getHours()) + ':' + pad2(now2.getMinutes()));
+            // Sync to cloud (if configured)
+            if (CloudSync.getMode() === 'github') {
+                const w = await CloudSync.writeContent(htmlData);
+                if (!w.success) {
+                    showToast('已保存到本机，但同步 GitHub 失败：' + (w.error || ''), 'error');
+                }
+            } else if (CloudSync.hasCloud()) {
+                const r = await CloudSync.syncBidirectional('up');
+                if (!r.success) {
+                    showToast('已保存到本机，但同步云端失败：' + (r.error || ''), 'error');
+                }
+            }
+
+            // 提交记录（客户咨询）也要随“保存”固化：以本地为准全量写回本机+云端。
+            // 注意：不能用 syncBidirectional 的“并集合并”，否则云端未删的那条会被合并回来导致“删了还在”。
+            const sr = await persistSubmissions();
+            if (!sr.success) {
+                showToast('内容已保存，但提交记录同步云端失败：' + (sr.error || ''), 'error');
             }
 
             // ===== Record to history =====
@@ -1524,7 +1639,7 @@
             renderHistory();
             updateDataSummary();
             if (CloudSync.isConfigured()) updateCloudUI();
-            showToast('内容已保存，前台已同步，提交记录已归档', 'success');
+            showToast('内容已保存，提交记录已同步', 'success');
         }
 
         // ===== Reset =====
@@ -2134,6 +2249,22 @@
             renderCustomers();
         }
 
+        // ===== 把当前内存中的提交记录（customers）全量写回本机+云端 =====
+        // 关键：以“本地为准”整体覆盖，而不是用并集合并——
+        // 否则云端那条没删成功的记录会被合并回来，造成“删了还在”。
+        async function persistSubmissions() {
+            // 1) 本机服务器（若在线，免密）
+            if (serverOnline) {
+                await apiPost('/api/submissions-replace', customers).catch(() => {});
+            }
+            // 2) 云端（按当前类型：local→本机/api，server→云端，github→github）
+            if (CloudSync.isConfigured()) {
+                const r = await CloudSync.writeSubmissions(customers);
+                if (!r || !r.success) return { success: false, error: (r && r.error) || '未知错误' };
+            }
+            return { success: true };
+        }
+
         function renderCustomers() {
             const container = document.getElementById('customerTable');
             const countEl = document.getElementById('customerCount');
@@ -2173,23 +2304,26 @@
             if (!customer) return;
             if (!confirm('确定要删除 ' + (customer.name || '该客户') + ' 的咨询记录吗？')) return;
 
-            if (customer.id && serverOnline) {
-                const result = await apiDelete('/api/submissions/' + customer.id);
-                if (result && result.success) {
-                    customers.splice(idx, 1);
-                    renderCustomers();
-                    showToast('客户记录已删除', 'success');
-                    return;
-                }
+            const id = customer.id;
+            // 1) 本机服务器单条快速删（若在线，免密）
+            if (serverOnline && id) {
+                await apiDelete('/api/submissions/' + id).catch(() => {});
             }
-            // Delete from cloud first (before splicing local array)
-            if (CloudSync.isConfigured() && customer.id) {
-                await CloudSync.deleteSubmission(customer.id);
-            }
-            // Then remove from local array
+            // 2) 本地移除
             customers.splice(idx, 1);
             localStorage.setItem('lecang_submissions', JSON.stringify(customers));
             renderCustomers();
+            // 3) 持久化（以本地为准全量覆盖云端/本机，确保删除真正生效，不会被“合并”复活）
+            if (serverOnline) {
+                await apiPost('/api/submissions-replace', customers).catch(() => {});
+            }
+            if (CloudSync.isConfigured()) {
+                const r = await CloudSync.writeSubmissions(customers);
+                if (!r || !r.success) {
+                    showToast('记录已在本地删除，但同步云端失败：' + ((r && r.error) || ''), 'error');
+                    return;
+                }
+            }
             showToast('客户记录已删除', 'success');
         }
 
@@ -2198,14 +2332,22 @@
             if (!confirm('确定要清空所有客户咨询记录吗？\n\n此操作不可撤销，共 ' + customers.length + ' 条记录将被删除。')) return;
 
             if (serverOnline) {
-                await apiDelete('/api/submissions');
-            }
-            if (CloudSync.isConfigured()) {
-                await CloudSync.clearSubmissions();
+                await apiDelete('/api/submissions').catch(() => {});
             }
             customers = [];
             localStorage.setItem('lecang_submissions', JSON.stringify(customers));
             renderCustomers();
+            // 持久化（全量覆盖，确保清空生效）
+            if (serverOnline) {
+                await apiPost('/api/submissions-replace', customers).catch(() => {});
+            }
+            if (CloudSync.isConfigured()) {
+                const r = await CloudSync.writeSubmissions(customers);
+                if (!r || !r.success) {
+                    showToast('本地已清空，但同步云端失败：' + ((r && r.error) || ''), 'error');
+                    return;
+                }
+            }
             showToast('所有客户记录已清空', 'success');
         }
 
@@ -2367,23 +2509,46 @@
 
         // ===== Cloud Config & Sync =====
         function updateCloudUI() {
-            const configured = CloudSync.isConfigured();
+            const mode = CloudSync.getMode();
+            const cfg = CloudSync.getConfig();
+            const configured = (mode !== 'local');
             const badge = document.getElementById('cloudStatusBadge');
             const banner = document.getElementById('syncBanner');
             const lastTimeEl = document.getElementById('syncLastTime');
             const lastSync = localStorage.getItem('lecang_cloud_lastsync');
 
+            // 云端类型面板与按钮高亮
+            const btnS = document.getElementById('btnTypeServer');
+            const btnG = document.getElementById('btnTypeGithub');
+            const pS = document.getElementById('panelServer');
+            const pG = document.getElementById('panelGithub');
+            const hl = 'background:var(--deep-red);color:#fff;border-color:var(--deep-red);';
+            const nm = 'background:transparent;color:var(--ink);border-color:var(--border);';
+            if (cfg.active === 'github') {
+                if (pG) pG.style.display = 'block';
+                if (pS) pS.style.display = 'none';
+                if (btnG) btnG.setAttribute('style', hl);
+                if (btnS) btnS.setAttribute('style', nm);
+            } else {
+                if (pS) pS.style.display = 'block';
+                if (pG) pG.style.display = 'none';
+                if (btnS) btnS.setAttribute('style', cfg.active === 'server' ? hl : nm);
+                if (btnG) btnG.setAttribute('style', nm);
+            }
+
             // Update banner
             if (banner) {
                 if (configured) {
-                    const cfg = CloudSync.getConfig();
-                    let host = '';
-                    try { host = new URL(cfg.workerUrl).host; } catch (e) { host = cfg.workerUrl; }
-                    banner.innerHTML = '✅ 云端已连接：<strong>' + host + '</strong>　|　点下面按钮同步数据';
+                    let label = '';
+                    if (mode === 'github') label = 'GitHub：' + (cfg.github.repo || '');
+                    else if (mode === 'server') {
+                        try { label = new URL(cfg.workerUrl).host; } catch (e) { label = cfg.workerUrl; }
+                    } else label = '本机同源';
+                    banner.innerHTML = '✅ 云端已连接：<strong>' + label + '</strong>　|　点下面按钮同步数据';
                     banner.style.background = 'rgba(74,124,89,0.1)';
                     banner.style.color = 'var(--success)';
                 } else {
-                    banner.innerHTML = '⚠️ 云端未连接，请先在下方「⚙️ 云端设置」中配置';
+                    banner.innerHTML = '⚠️ 云端未连接，请先在下方「⚙️ 云端设置」中选择并配置一个云端';
                     banner.style.background = 'var(--cream)';
                     banner.style.color = 'var(--deep-red)';
                 }
@@ -2411,37 +2576,53 @@
             const syncStatusText = document.getElementById('syncStatusText');
             if (syncStatusText) syncStatusText.textContent = configured ? '已配置' : '未配置';
 
-            // Fill form fields if configured
-            if (configured) {
-                const cfg = CloudSync.getConfig();
-                const urlEl = document.getElementById('ghWorkerUrl');
-                const keyEl = document.getElementById('ghAdminKey');
-                if (urlEl && !urlEl.value) urlEl.value = cfg.workerUrl;
-                if (keyEl && !keyEl.value) keyEl.value = cfg.adminKey;
-            }
+            // Fill form fields (only when empty)
+            const urlEl = document.getElementById('ghWorkerUrl');
+            const keyEl = document.getElementById('ghAdminKey');
+            if (urlEl && !urlEl.value) urlEl.value = cfg.workerUrl || '';
+            if (keyEl && !keyEl.value) keyEl.value = cfg.adminKey || '';
+            const auEl = document.getElementById('ghAuthUser');
+            const apEl = document.getElementById('ghAuthPass');
+            if (auEl && !auEl.value) auEl.value = cfg.authUser || '';
+            if (apEl && !apEl.value) apEl.value = cfg.authPass || '';
+            const rEl = document.getElementById('ghRepo');
+            const bEl = document.getElementById('ghBranch');
+            const pEl = document.getElementById('ghPath');
+            const tEl = document.getElementById('ghToken');
+            if (rEl && !rEl.value) rEl.value = cfg.github.repo || '';
+            if (bEl && !bEl.value) bEl.value = cfg.github.branch || 'main';
+            if (pEl && !pEl.value) pEl.value = cfg.github.path || 'data/cloud-data.json';
+            if (tEl && !tEl.value) tEl.value = cfg.github.token || '';
+            const pxEl = document.getElementById('ghProxy');
+            if (pxEl && !pxEl.value) pxEl.value = cfg.github.proxy || '';
+        }
+
+        function selectCloudType(mode) {
+            CloudSync.setActive(mode);
+            updateCloudUI();
         }
 
         function saveCloudConfig() {
             const url = document.getElementById('ghWorkerUrl').value.trim();
             const key = document.getElementById('ghAdminKey').value.trim();
-            if (!url) {
-                showToast('请填写云端代理地址', 'error');
-                return;
-            }
+            const au = document.getElementById('ghAuthUser').value.trim();
+            const ap = document.getElementById('ghAuthPass').value;
+            // 留空 = 本机同源（推荐）；填写则以该地址为云端
             CloudSync.setConfig(url, key);
+            CloudSync.setServerAuth(au, ap);
             updateCloudUI();
             updateDataSummary();
-            showToast('云端配置已保存', 'success');
+            showToast(url ? '云端配置已保存' : '已设为本机同源', 'success');
         }
 
         async function testCloudConnection() {
             const url = document.getElementById('ghWorkerUrl').value.trim();
             const key = document.getElementById('ghAdminKey').value.trim();
-            if (!url) {
-                showToast('请先填写云端代理地址', 'error');
-                return;
-            }
+            const au = document.getElementById('ghAuthUser').value.trim();
+            const ap = document.getElementById('ghAuthPass').value;
+            // 留空 = 本机同源
             CloudSync.setConfig(url, key);
+            CloudSync.setServerAuth(au, ap);
             const resultEl = document.getElementById('cloudTestResult');
             resultEl.style.display = 'block';
             resultEl.style.background = 'rgba(184,134,11,0.1)';
@@ -2474,12 +2655,120 @@
         function clearCloudConfig() {
             if (!confirm('确定要清除云端配置吗？\n\n清除后本地数据不受影响，但将无法使用云端同步。')) return;
             CloudSync.setConfig('', '');
+            CloudSync.setServerAuth('', '');
             document.getElementById('ghWorkerUrl').value = '';
             document.getElementById('ghAdminKey').value = '';
+            document.getElementById('ghAuthUser').value = '';
+            document.getElementById('ghAuthPass').value = '';
             const resultEl = document.getElementById('cloudTestResult');
             if (resultEl) resultEl.style.display = 'none';
             updateCloudUI();
             showToast('云端配置已清除', 'success');
+        }
+
+        // ===== GitHub 云端配置 =====
+        function saveGitHubConfig() {
+            const repo = document.getElementById('ghRepo').value.trim();
+            const branch = document.getElementById('ghBranch').value.trim();
+            const path = document.getElementById('ghPath').value.trim();
+            const token = document.getElementById('ghToken').value.trim();
+            const proxy = document.getElementById('ghProxy').value.trim();
+            if (!repo || !token) {
+                showToast('请填写 GitHub 仓库（owner/repo）和 Token', 'error');
+                return;
+            }
+            CloudSync.setGitHubConfig(repo, branch, path, token, proxy);
+            updateCloudUI();
+            updateDataSummary();
+            showToast('GitHub 云端已保存并设为当前云端', 'success');
+        }
+
+        async function testGitHubConnection() {
+            const repo = document.getElementById('ghRepo').value.trim();
+            const branch = document.getElementById('ghBranch').value.trim();
+            const path = document.getElementById('ghPath').value.trim();
+            const token = document.getElementById('ghToken').value.trim();
+            const proxy = document.getElementById('ghProxy').value.trim();
+            if (!repo || !token) {
+                showToast('请先填写仓库和 Token', 'error');
+                return;
+            }
+            CloudSync.setGitHubConfig(repo, branch, path, token, proxy);
+            const el = document.getElementById('ghTestResult');
+            el.style.display = 'block';
+            el.style.background = 'rgba(184,134,11,0.1)';
+            el.style.color = 'var(--warm-brown)';
+            el.textContent = '⏳ 正在测试 GitHub 连接...';
+            const r = await CloudSync.testGitHub();
+            if (r.success) {
+                el.style.background = 'rgba(74,124,89,0.1)';
+                el.style.color = 'var(--success)';
+                el.textContent = '✅ ' + r.message;
+                updateCloudUI();
+            } else {
+                el.style.background = 'rgba(192,57,43,0.1)';
+                el.style.color = 'var(--danger)';
+                el.textContent = '❌ ' + r.error;
+            }
+        }
+
+        function clearGitHubConfig() {
+            if (!confirm('确定清除 GitHub 云端配置吗？\n\n清除后本地数据不受影响，但将无法用 GitHub 同步。')) return;
+            CloudSync.setGitHubConfig('', '', '', '', '');
+            document.getElementById('ghRepo').value = '';
+            document.getElementById('ghBranch').value = '';
+            document.getElementById('ghPath').value = '';
+            document.getElementById('ghToken').value = '';
+            document.getElementById('ghProxy').value = '';
+            const el = document.getElementById('ghTestResult');
+            if (el) el.style.display = 'none';
+            updateCloudUI();
+            showToast('GitHub 云端配置已清除', 'success');
+        }
+
+        async function doSync(direction) {
+            const mode = CloudSync.getMode();
+            if (mode === 'local') {
+                showToast('请先在「云端设置」中选择并配置一个云端（内网穿透服务器 或 GitHub）', 'error');
+                return;
+            }
+            const resultArea = document.getElementById('syncResultArea');
+            if (resultArea) {
+                resultArea.style.display = 'block';
+                resultArea.style.padding = '16px';
+                resultArea.style.borderRadius = '12px';
+                resultArea.style.background = 'rgba(184,134,11,0.08)';
+                resultArea.style.color = 'var(--warm-brown)';
+                resultArea.style.fontSize = '14px';
+                resultArea.style.textAlign = 'center';
+                resultArea.innerHTML = '⏳ 正在同步（本地 ⇄ 云端）...';
+            }
+            const result = await CloudSync.syncBidirectional(direction);
+            if (resultArea) {
+                if (result.success) {
+                    resultArea.style.background = 'rgba(74,124,89,0.1)';
+                    resultArea.style.color = 'var(--success)';
+                    resultArea.innerHTML = '✅ 双向同步完成！<br><span style="font-size:13px;">合并后共 <strong>' + result.mergedSubmissions + '</strong> 条线索（本地 ' + result.localSubmissions + ' / 云端 ' + result.cloudSubmissions + '），内容以【' + result.contentSource + '】为准</span>';
+                } else {
+                    resultArea.style.background = 'rgba(192,57,43,0.1)';
+                    resultArea.style.color = 'var(--danger)';
+                    resultArea.innerHTML = '❌ 同步失败<br><span style="font-size:12px;">' + (result.error || '未知错误') + '</span>';
+                }
+            }
+            if (result.success) {
+                await loadContent();
+                populateForm();
+                renderProducts();
+                renderFeatures();
+                renderWhyCards();
+                renderGallery();
+                renderHistory();
+                await loadSubmissions();
+                updateCloudUI();
+                updateDataSummary();
+                markSaved();
+                showToast('双向同步完成', 'success');
+            }
         }
 
         async function syncToCloud() {
@@ -2591,6 +2880,16 @@
         }
 
         // ===== Init =====
+        // 云端配置被「本机服务器」自动刷新时（例如把文件夹复制到新电脑后，
+        // 从 data/sync-config.json 读到了云端地址），重新拉取状态与数据。
+        window.__lecangOnConfigRefreshed = async function () {
+            await checkServerStatus();
+            await loadContent();
+            await loadSubmissions();
+            updateCloudUI();
+            updateDataSummary();
+        };
+
         (async () => {
             // Auto-fill known worker URL if not already configured
             if (!CloudSync.isConfigured()) {

@@ -85,6 +85,7 @@
         .nav-logo img {
             height: 48px;
             width: auto;
+            object-fit: contain;
         }
 
         .nav-logo-text {
@@ -1025,7 +1026,7 @@
     <nav id="navbar">
         <div class="nav-container">
             <a href="#" class="nav-logo">
-                <img src="logo/logo.png" alt="乐藏佛珠">
+                <img src="logo/AI生成.png" alt="乐藏佛珠">
                 <span class="nav-logo-text" data-key="nav-logo">乐藏</span>
             </a>
             <ul class="nav-links">
@@ -1064,7 +1065,7 @@
                 </div>
             </div>
             <div class="hero-logo">
-                <img src="logo/logo.png" alt="乐藏佛珠店标">
+                <img src="logo/AI生成.png" alt="乐藏佛珠店标">
             </div>
         </div>
     </section>
@@ -1145,7 +1146,7 @@
             <div class="about-content">
                 <div class="about-image">
                     <div class="about-image-main">
-                        <img src="logo/logo.png" alt="乐藏品牌印章">
+                        <img src="logo/AI生成.png" alt="乐藏品牌印章">
                     </div>
                 </div>
                 <div class="about-text">
@@ -1316,7 +1317,7 @@
 
     <!-- Footer -->
     <footer>
-        <img src="logo/logo.png" alt="乐藏" class="footer-logo">
+        <img src="logo/AI生成.png" alt="乐藏" class="footer-logo">
         <div class="footer-links">
             <a href="#products">精品佛珠</a>
             <a href="#about">关于乐藏</a>
@@ -1393,9 +1394,10 @@
             });
         }
 
-        // Load saved content: cloud first (if configured), then server API, fallback to localStorage
+        // Load saved content: cloud first (if configured), then server API,
+        // then local storage, and finally the committed content file (GitHub Pages / static host, no token needed)
         async function loadSavedContent() {
-            // Try cloud sync first (if configured) — ensures cross-device consistency
+            // 1) Cloud sync (this browser has token configured) → cross-device, highest priority
             if (CloudSync.isConfigured()) {
                 const cloudData = await CloudSync.readContent();
                 if (cloudData && Object.keys(cloudData).length > 0) {
@@ -1404,18 +1406,31 @@
                     return;
                 }
             }
-            // Try server API
+            // 2) Local server API (when running the Node/Worker server on the same origin)
             const result = await apiGet('/api/content');
             if (result && result.success && result.data && Object.keys(result.data).length > 0) {
                 applyContent(result.data);
                 localStorage.setItem('lecang_content', JSON.stringify(result.data));
                 return;
             }
-            // Fallback to localStorage
+            // 3) This browser's own localStorage (admin just saved here, freshest)
             const saved = localStorage.getItem('lecang_content');
             if (saved) {
-                applyContent(JSON.parse(saved));
+                try { applyContent(JSON.parse(saved)); return; } catch (e) {}
             }
+            // 4) Committed content file on the static host (e.g. GitHub Pages data/cloud-data.json).
+            //    Lets visitors WITHOUT a token see the latest admin save. Token-less + cache-busted.
+            try {
+                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: AbortSignal.timeout(5000) });
+                if (pub.ok) {
+                    const pd = await pub.json().catch(() => null);
+                    const content = (pd && pd.content) ? pd.content : pd;
+                    if (content && Object.keys(content).length > 0) {
+                        applyContent(content);
+                        localStorage.setItem('lecang_content', JSON.stringify(content));
+                    }
+                }
+            } catch (e) { /* no committed file on this host → ignore */ }
         }
 
         async function handleSubmit(e) {
@@ -1440,22 +1455,15 @@
             btn.textContent = '提交咨询';
 
             if (result && result.success) {
+                // 本机已保存；若配置了云端，用服务端归一化后的同一条记录推送，避免重复
+                if (CloudSync.hasCloud() && result.submission) {
+                    CloudSync.addSubmission(result.submission).catch(() => {});
+                }
                 successMsg.classList.add('show');
                 e.target.reset();
                 setTimeout(() => successMsg.classList.remove('show'), 5000);
-                // 同时上传到云端（如果已配置），确保其他设备能看到
-                if (CloudSync.isConfigured()) {
-                    const now = new Date();
-                    const pad = n => String(n).padStart(2, '0');
-                    const submission = {
-                        ...formData,
-                        time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
-                        timestamp: now.getTime()
-                    };
-                    CloudSync.addSubmission(submission);
-                }
             } else {
-                // Fallback: save to localStorage and cloud sync
+                // 提交失败（服务器未启动等）：先存到本机，联网后可在后台上传
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const submission = {
@@ -1463,12 +1471,7 @@
                     time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
                     timestamp: now.getTime()
                 };
-                // Save locally
                 CloudSync.addSubmissionLocal(submission);
-                // Save to cloud if configured
-                if (CloudSync.isConfigured()) {
-                    CloudSync.addSubmission(submission);
-                }
                 successMsg.classList.add('show');
                 e.target.reset();
                 setTimeout(() => successMsg.classList.remove('show'), 5000);

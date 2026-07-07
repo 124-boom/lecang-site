@@ -1,65 +1,215 @@
 /**
- * CloudSync - 安全云端同步模块（Worker 代理模式）
+ * CloudSync - 云端/本地同步模块（同源模式 v5，支持 内网穿透服务器 + GitHub 两种云端）
  *
- * 安全设计：网页里【绝不】存放任何 GitHub 令牌。
- * 所有读写都通过 Cloudflare Worker 代理完成，令牌只在 Worker 服务端。
- * 网页只持有一个"代理地址"和一个"管理密码"（用于保护后台写操作）。
+ * 云端类型（config.active）：
+ *   - 'local'  ：仅本机（不同步云端），读写走 /api/*
+ *   - 'server' ：内网穿透服务器（家里常开电脑），读写走根路径，写需管理密码(x-admin-key)
+ *   - 'github' ：GitHub 仓库（公开/私有均可），读走 raw/api，写走 GitHub API(PUT，需 Token)
  *
- * 接口（由 Worker 提供）：
- *   GET  /content            读取网站内容（公开）
- *   POST /content            写入网站内容（需管理密码）
- *   GET  /submissions        读取客户提交（需管理密码）
- *   POST /submit             新增一条客户提交（公开，访客用）
- *   POST /submissions-replace 整体覆盖提交列表（需管理密码）
- *   DELETE /submissions/:id  删除一条提交（需管理密码）
- *   POST /clear-submissions  清空提交（需管理密码）
- *   GET  /status             健康检查（公开）
+ * 合并语义（绝不丢数据）：
+ *   - 客户线索：按 id 并集，同 id 取较新一条
+ *   - 网站内容：按 updatedAt 后写覆盖，平局取本地
+ *
+ * 网页里【绝不】存放服务器密钥；GitHub Token 仅存于本机（浏览器 localStorage / 文件夹 data 文件）。
  */
 const CloudSync = {
-    // 代理地址（部署 Worker 后填入；也可在后台"数据同步"面板里改）
-    _defaultWorker: 'https://lecang-sync.gaojieyou9.workers.dev',
+    _defaultWorker: '',
 
-    config: { workerUrl: '', adminKey: '' },
+    config: {
+        workerUrl: '',
+        adminKey: '',
+        authUser: '', // 花生壳/内网穿透隧道的「访问验证」账号（Basic Auth）
+        authPass: '', // 花生壳/内网穿透隧道的「访问验证」密码（Basic Auth）
+        github: { repo: '', branch: 'main', path: 'data/cloud-data.json', token: '', proxy: '' },
+        active: 'local' // 'local' | 'server' | 'github'
+    },
 
     init() {
         try {
             const saved = localStorage.getItem('lecang_sync_config');
             if (saved) {
-                this.config = JSON.parse(saved);
+                const p = JSON.parse(saved);
+                this.config.workerUrl = p.workerUrl || '';
+                this.config.adminKey = p.adminKey || '';
+                this.config.authUser = p.authUser || '';
+                this.config.authPass = p.authPass || '';
+                this.config.github = Object.assign(
+                    { repo: '', branch: 'main', path: 'data/cloud-data.json', token: '', proxy: '' },
+                    p.github || {}
+                );
+                this.config.active = p.active || this._autoActive();
             } else {
-                this.config = { workerUrl: this._defaultWorker, adminKey: '' };
+                this.config.active = this._autoActive();
             }
         } catch (e) {
-            this.config = { workerUrl: this._defaultWorker, adminKey: '' };
+            this.config.active = this._autoActive();
+        }
+        this._refreshFromServer();
+    },
+
+    _autoActive() {
+        const g = this.config.github || {};
+        if (g.repo && g.token) return 'github';
+        if (this.hasCloudServer()) return 'server';
+        return 'local';
+    },
+
+    hasCloudServer() {
+        return !!(this.config.workerUrl && this.config.workerUrl.indexOf('http') === 0);
+    },
+    hasGitHub() {
+        const g = this.config.github || {};
+        return !!(g.repo && g.token);
+    },
+
+    // 当前生效的云端类型（active 失效时自动回退）
+    getMode() {
+        const a = this.config.active;
+        if (a === 'github') return this.hasGitHub() ? 'github' : 'local';
+        if (a === 'server') return this.hasCloudServer() ? 'server' : 'local';
+        return 'local';
+    },
+    hasCloud() { return this.getMode() !== 'local'; },
+    isConfigured() { return this.getMode() !== 'local'; },
+
+    async _refreshFromServer() {
+        try {
+            const r = await fetch('/api/sync-config', { signal: AbortSignal.timeout(5000) });
+            if (!r.ok) return;
+            const j = await r.json();
+            if (!j || !j.success || !j.data) return;
+            const d = j.data;
+            // server 端 github 默认值补全（含 proxy）
+            const srvGithub = Object.assign(
+                { repo: '', branch: 'main', path: 'data/cloud-data.json', token: '', proxy: '' },
+                d.github || {}
+            );
+            let changed = false;
+            if ((d.workerUrl || '') !== this.config.workerUrl) changed = true;
+            if ((d.adminKey || '') !== this.config.adminKey) changed = true;
+            if ((d.authUser || '') !== this.config.authUser) changed = true;
+            if ((d.authPass || '') !== this.config.authPass) changed = true;
+            // GitHub 合并策略：server 端有实质数据（repo+token）才覆盖本地；否则保留本地已有配置
+            const lg = this.config.github || {};
+            const srvHasGithub = !!(srvGithub.repo && srvGithub.token);
+            const localHasGithub = !!(lg.repo || lg.token);
+            if (srvHasGithub && localHasGithub) {
+                if (
+                    srvGithub.repo !== (lg.repo || '') || srvGithub.token !== (lg.token || '') ||
+                    (srvGithub.branch || 'main') !== (lg.branch || 'main') ||
+                    (srvGithub.path || 'data/cloud-data.json') !== (lg.path || 'data/cloud-data.json') ||
+                    (srvGithub.proxy || '') !== (lg.proxy || '')
+                ) changed = true;
+            } else if (srvHasGithub && !localHasGithub) {
+                changed = true;  // server 有、本地无 → 用 server 的
+            }
+            // else: server 无、本地有 → 保持本地不变（不覆盖！）
+            const srvActive = d.active || this._autoActive();
+            if (srvActive !== this.config.active) changed = true;
+
+            if (changed) {
+                this.config.workerUrl = d.workerUrl || '';
+                this.config.adminKey = d.adminKey || '';
+                this.config.authUser = d.authUser || '';
+                this.config.authPass = d.authPass || '';
+                if (srvHasGithub) {
+                    this.config.github = srvGithub;
+                }
+                // localHasGithub && !srvHasGithub 时保持 this.config.github 不变
+                this.config.active = srvActive;
+                localStorage.setItem('lecang_sync_config', JSON.stringify(this.config));
+                this._notifyRefreshed();
+            }
+            // 若本地有 github 而 server 无，把本地数据同步到 server 防下次再覆盖
+            if (!srvHasGithub && localHasGithub) {
+                this._persistServer();
+            }
+        } catch (e) { /* 无本地服务器（如 GitHub Pages / file://）→ 用浏览器本地存储，忽略 */ }
+    },
+
+    _persistServer() {
+        fetch('/api/sync-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.config)
+        }).catch(() => {});
+    },
+
+    _notifyRefreshed() {
+        if (typeof window !== 'undefined' && typeof window.__lecangOnConfigRefreshed === 'function') {
+            window.__lecangOnConfigRefreshed();
         }
     },
 
+    // 服务器云端配置（保持旧签名：setConfig(workerUrl, adminKey)）
     setConfig(workerUrl, adminKey) {
-        this.config = {
-            workerUrl: (workerUrl || this._defaultWorker).replace(/\/+$/, ''),
-            adminKey: adminKey || ''
-        };
+        this.config.workerUrl = (workerUrl || '').replace(/\/+$/, '');
+        this.config.adminKey = adminKey || '';
+        this.config.active = this.config.workerUrl ? 'server' : (this.hasGitHub() ? 'github' : 'local');
         localStorage.setItem('lecang_sync_config', JSON.stringify(this.config));
+        this._persistServer();
     },
 
-    getConfig() {
-        return { ...this.config };
+    // 花生壳/内网穿透隧道的「访问验证」凭据（HTTP Basic Auth），与 setConfig 分开以便单独设置
+    setServerAuth(user, pass) {
+        this.config.authUser = (user || '').trim();
+        this.config.authPass = pass || '';
+        localStorage.setItem('lecang_sync_config', JSON.stringify(this.config));
+        this._persistServer();
     },
 
-    isConfigured() {
-        return !!(this.config.workerUrl && this.config.workerUrl.indexOf('http') === 0);
+    // GitHub 云端配置
+    setGitHubConfig(repo, branch, path, token, proxy) {
+        this.config.github = {
+            repo: (repo || '').trim(),
+            branch: (branch || 'main').trim() || 'main',
+            path: (path || 'data/cloud-data.json').trim() || 'data/cloud-data.json',
+            token: (token || '').trim(),
+            proxy: (proxy || '').trim()
+        };
+        this.config.active = (this.config.github.repo && this.config.github.token)
+            ? 'github'
+            : (this.hasCloudServer() ? 'server' : 'local');
+        localStorage.setItem('lecang_sync_config', JSON.stringify(this.config));
+        this._persistServer();
     },
+
+    // 仅切换当前生效的云端类型（不改变已保存的配置）
+    setActive(mode) {
+        this.config.active = mode;
+        localStorage.setItem('lecang_sync_config', JSON.stringify(this.config));
+        this._persistServer();
+    },
+
+    getConfig() { return JSON.parse(JSON.stringify(this.config)); },
+
+    // 根据当前云端类型选择 base 与路径前缀
+    _base() { return this.getMode() === 'server' ? this.config.workerUrl : ''; },
+    _contentPath() { return this.getMode() === 'server' ? '/content' : '/api/content'; },
+    _subsPath() { return this.getMode() === 'server' ? '/submissions' : '/api/submissions'; },
+    _submitPath() { return this.getMode() === 'server' ? '/submit' : '/api/submit'; },
+    _adminForWrite() { return this.getMode() === 'server'; },
 
     _headers(admin) {
         const h = { 'Content-Type': 'application/json' };
         if (admin && this.config.adminKey) h['x-admin-key'] = this.config.adminKey;
+        // 花生壳/内网穿透隧道的「访问验证」是 HTTP Basic Auth；fetch 不会弹窗、也不会自动带凭据，
+        // 必须在这里自动带上，否则所有同步/提交请求都会被 401 挡掉（表现为“网络错误/无法连接云端”）。
+        if (this.getMode() === 'server' && (this.config.authUser || this.config.authPass)) {
+            const raw = (this.config.authUser || '') + ':' + (this.config.authPass || '');
+            try {
+                h['Authorization'] = 'Basic ' + btoa(unescape(encodeURIComponent(raw)));
+            } catch (e) {
+                h['Authorization'] = 'Basic ' + btoa(raw);
+            }
+        }
         return h;
     },
 
-    async _api(method, path, body, admin) {
-        if (!this.isConfigured()) return { success: false, error: '未配置云端代理地址' };
+    async _req(base, method, path, body, admin) {
+        const url = (base || '') + path;
         try {
-            const resp = await fetch(this.config.workerUrl + path, {
+            const resp = await fetch(url, {
                 method,
                 headers: this._headers(admin),
                 body: body ? JSON.stringify(body) : undefined,
@@ -76,58 +226,475 @@ const CloudSync = {
             const data = await resp.json().catch(() => ({}));
             return { success: true, data };
         } catch (e) {
-            return { success: false, error: '网络错误：' + e.message };
+            const isLocal = !base;
+            const msg = isLocal
+                ? '本机服务器未连接（请先双击「启动网站.bat」启动本地服务器）'
+                : '无法连接云端：家里电脑服务器可能未启动，或花生壳/内网穿透隧道已断开（请在家里电脑双击「启动网站.bat」并保持隧道在线）';
+            return { success: false, error: msg };
         }
     },
 
-    // ===== 云端内容读写 =====
-    async readContent() {
-        const r = await this._api('GET', '/content', null, false);
-        if (!r.success) return null;
-        if (r.data && r.data.content) return r.data.content;
-        return r.data || null;
+    _extractContent(d) {
+        if (!d) return null;
+        if (d.content) return d.content;
+        if (d.data) return d.data;
+        return d;
     },
-
-    async readSubmissions() {
-        const r = await this._api('GET', '/submissions', null, true);
-        if (!r.success) return null;
-        if (Array.isArray(r.data)) return r.data;
-        if (r.data && Array.isArray(r.data.submissions)) return r.data.submissions;
+    _extractSubs(d) {
+        if (!d) return [];
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d.submissions)) return d.submissions;
+        if (Array.isArray(d.data)) return d.data;
         return [];
     },
 
+    // ===== 本机服务器读写（/api/*）=====
+    async readLocalContent() {
+        const r = await this._req('', 'GET', '/api/content', null, false);
+        if (!r.success) return null;
+        return this._extractContent(r.data);
+    },
+    async readLocalSubs() {
+        const r = await this._req('', 'GET', '/api/submissions', null, false);
+        if (!r.success) return null;
+        return this._extractSubs(r.data);
+    },
+    async writeLocalContent(c) { return this._req('', 'POST', '/api/content', c, false); },
+    async writeLocalSubs(s) { return this._req('', 'POST', '/api/submissions-replace', s, false); },
+
+    // ===== 内网穿透服务器读写（根路径，写需密钥）=====
+    async readCloudContent() {
+        const r = await this._req(this._base(), 'GET', '/content', null, false);
+        if (!r.success) return null;
+        return this._extractContent(r.data);
+    },
+    async readCloudSubs() {
+        const r = await this._req(this._base(), 'GET', '/submissions', null, true);
+        if (!r.success) return null;
+        return this._extractSubs(r.data);
+    },
+    async writeCloudContent(c) { return this._req(this._base(), 'POST', '/content', c, true); },
+    async writeCloudSubs(s) { return this._req(this._base(), 'POST', '/submissions-replace', s, true); },
+
+    // ===== GitHub 云端读写 =====
+    _ghApiUrl() {
+        const g = this.config.github;
+        return this.githubProxyUrl('https://api.github.com/repos/' + g.repo + '/contents/' + (g.path || 'data/cloud-data.json'));
+    },
+    _ghRawUrl() {
+        const g = this.config.github;
+        return this.githubProxyUrl('https://raw.githubusercontent.com/' + g.repo + '/' + (g.branch || 'main') + '/' + (g.path || 'data/cloud-data.json'));
+    },
+    // 国内网络常连不上 api.github.com / raw.githubusercontent.com，可填一个 GitHub 代理/镜像
+    // 把请求转发过去。格式如 https://ghproxy.net （会自动拼成 https://ghproxy.net/https://api.github.com/...）
+    githubProxyUrl(u) {
+        const p = ((this.config.github && this.config.github.proxy) || '').trim().replace(/\/+$/, '');
+        return p ? p + '/' + u : u;
+    },
+    _b64encode(str) {
+        const utf8 = new TextEncoder().encode(str);
+        let bin = '';
+        utf8.forEach(b => bin += String.fromCharCode(b));
+        return btoa(bin);
+    },
+    _b64decode(b64) {
+        const bin = atob((b64 || '').replace(/\s/g, ''));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new TextDecoder().decode(bytes);
+    },
+    _ghHeaders() {
+        const h = {
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28'
+        };
+        if (this.config.github.token) h['Authorization'] = 'Bearer ' + this.config.github.token;
+        return h;
+    },
+    async readGitHubRaw() {
+        const g = this.config.github;
+        const apiUrl = this._ghApiUrl();
+        const apiHeaders = this._ghHeaders(); // 有 Token 自动带上 Authorization
+        // 优先走 api.github.com（CORS 友好、数据最新）；公开仓库无需 Token 也能读
+        try {
+            const r = await fetch(apiUrl, { headers: apiHeaders, signal: AbortSignal.timeout(15000) });
+            if (r.status === 404) return null;
+            if (r.ok) {
+                const j = await r.json();
+                const content = (j.content) ? this._b64decode(j.content) : '{}';
+                let data; try { data = JSON.parse(content); } catch (e) { data = {}; }
+                return data;
+            }
+            // api 可达但报错：公开仓库无 Token 时再试 raw / jsDelivr 兜底
+            if (!g.token) {
+                const fb = await this._readGitHubFallback();
+                if (fb !== undefined) return fb;
+                return { success: false, error: 'GitHub 读取失败 ' + r.status + '（公开仓库读取失败，可尝试填写 Token，或检查仓库/分支/路径）' };
+            }
+            return { success: false, error: 'GitHub 读取失败 ' + r.status + '（请检查 Token 是否有 repo 权限、仓库/分支/路径是否正确）' };
+        } catch (e) {
+            // 网络层失败（国内常连不上 api.github.com）：公开仓库无 Token 时走 raw / jsDelivr
+            if (!g.token) {
+                const fb = await this._readGitHubFallback();
+                if (fb !== undefined) return fb;
+            }
+            const tip = g.proxy
+                ? '（已配置代理但仍失败，请换一个可用的代理/镜像地址）'
+                : '（你的网络可能连不上 api.github.com：可在「云端设置→GitHub」填「代理/镜像地址」如 https://ghproxy.net，或改用内网穿透服务器云端）';
+            return { success: false, error: 'GitHub 网络错误：' + e.message + tip };
+        }
+    },
+    // 公开仓库无 Token 时的读取兜底：依次试 raw.githubusercontent.com → jsDelivr CDN（国内通常可达）
+    async _readGitHubFallback() {
+        const g = this.config.github;
+        const sources = [
+            this._ghRawUrl(),
+            'https://cdn.jsdelivr.net/gh/' + g.repo + '@' + (g.branch || 'main') + '/' + (g.path || 'data/cloud-data.json')
+        ];
+        for (const u of sources) {
+            try {
+                const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+                if (r.status === 404) continue;
+                if (r.ok) {
+                    const j = await r.json().catch(() => ({}));
+                    if (j && j.success === false) continue;
+                    return j;
+                }
+            } catch (e2) {}
+        }
+        return undefined;
+    },
+    _safeRaw(raw) {
+        return (raw && raw.success !== false) ? raw : {};
+    },
+    async readGitHubContent() {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        return (d && d.content) ? d.content : d;
+    },
+    async readGitHubSubs() {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        return (d && Array.isArray(d.submissions)) ? d.submissions : [];
+    },
+    async writeGitHub(payload) {
+        const g = this.config.github;
+        if (!g.token) return { success: false, error: 'GitHub 写入需要 Token（在云端设置中填写）' };
+        // 取当前文件 SHA（不存在则为新建）
+        let sha = null;
+        try {
+            const r = await fetch(this._ghApiUrl(), { headers: this._ghHeaders() });
+            if (r.ok) { const j = await r.json(); sha = j.sha || null; }
+        } catch (e) {}
+        const body = JSON.stringify(payload, null, 2);
+        const r = await fetch(this._ghApiUrl(), {
+            method: 'PUT',
+            headers: this._ghHeaders(),
+            body: JSON.stringify({
+                message: '更新乐藏云端数据 ' + new Date().toISOString(),
+                content: this._b64encode(body),
+                sha: sha || undefined
+            })
+        });
+        if (!r.ok) {
+            let msg = '';
+            try { msg = (await r.json()).message || ''; } catch (e) {}
+            return { success: false, error: 'GitHub 写入失败 ' + r.status + (msg ? '：' + msg : '') };
+        }
+        return { success: true };
+    },
+    async writeGitHubContent(c) {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        d.content = c || {};
+        if (!Array.isArray(d.submissions)) d.submissions = [];
+        d.updatedAt = Date.now();
+        return this.writeGitHub(d);
+    },
+    async writeGitHubSubs(s) {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        d.submissions = s || [];
+        if (!d.content) d.content = {};
+        d.updatedAt = Date.now();
+        return this.writeGitHub(d);
+    },
+    async addGitHubSubmission(sub) {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        const subs = Array.isArray(d.submissions) ? d.submissions : [];
+        subs.unshift(sub);
+        d.submissions = subs;
+        if (!d.content) d.content = {};
+        d.updatedAt = Date.now();
+        return this.writeGitHub(d);
+    },
+    async deleteGitHubSubmission(id) {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        d.submissions = (Array.isArray(d.submissions) ? d.submissions : []).filter(s => String(s.id) !== String(id));
+        if (!d.content) d.content = {};
+        d.updatedAt = Date.now();
+        return this.writeGitHub(d);
+    },
+    async clearGitHubSubmissions() {
+        const d = this._safeRaw(await this.readGitHubRaw());
+        d.submissions = [];
+        if (!d.content) d.content = {};
+        d.updatedAt = Date.now();
+        return this.writeGitHub(d);
+    },
+
+    // ===== 统一分发（按当前云端类型）=====
+    async readContent() {
+        const m = this.getMode();
+        if (m === 'github') return this.readGitHubContent();
+        if (m === 'server') return this.readCloudContent();
+        return this.readLocalContent();
+    },
+    async writeContent(c) {
+        const m = this.getMode();
+        if (m === 'github') return this.writeGitHubContent(c);
+        if (m === 'server') return this.writeCloudContent(c);
+        return this.writeLocalContent(c);
+    },
+    async readSubmissions() {
+        const m = this.getMode();
+        if (m === 'github') return this.readGitHubSubs();
+        if (m === 'server') return this.readCloudSubs();
+        return this.readLocalSubs();
+    },
+    async writeSubmissions(s) {
+        const m = this.getMode();
+        if (m === 'github') return this.writeGitHubSubs(s);
+        if (m === 'server') return this.writeCloudSubs(s);
+        return this.writeLocalSubs(s);
+    },
     async addSubmission(submission) {
-        const r = await this._api('POST', '/submit', submission, false);
-        return r.success ? { success: true } : { success: false, error: r.error };
+        const m = this.getMode();
+        if (m === 'github') return this.addGitHubSubmission(submission);
+        return this._req(this._base(), 'POST', this._submitPath(), submission, false);
     },
-
-    async writeContent(contentData) {
-        const r = await this._api('POST', '/content', contentData, true);
-        return r.success ? { success: true } : { success: false, error: r.error };
-    },
-
     async deleteSubmission(id) {
-        const r = await this._api('DELETE', '/submissions/' + encodeURIComponent(id), null, true);
-        return r.success ? { success: true } : { success: false, error: r.error };
+        const m = this.getMode();
+        if (m === 'github') return this.deleteGitHubSubmission(id);
+        return this._req(this._base(), 'DELETE', this._subsPath() + '/' + encodeURIComponent(id), null, this._adminForWrite());
     },
-
     async clearSubmissions() {
-        const r = await this._api('POST', '/clear-submissions', null, true);
-        return r.success ? { success: true } : { success: false, error: r.error };
+        const m = this.getMode();
+        if (m === 'github') return this.clearGitHubSubmissions();
+        return this._req(this._base(), 'POST', this._subsPath().replace(/submissions$/, 'clear-submissions'), null, this._adminForWrite());
     },
 
-    // ===== 本地存储（缓存和回退，离线也能看） =====
+    // ===== 合并策略（核心：绝不丢数据）=====
+    mergeContent(local, cloud) {
+        const lt = local && local.updatedAt ? local.updatedAt : 0;
+        const ct = cloud && cloud.updatedAt ? cloud.updatedAt : 0;
+        if (ct > lt) return { content: cloud, source: '云端' };
+        return { content: (local || cloud), source: '本地' };
+    },
+    mergeSubs(local, cloud) {
+        const map = new Map();
+        const all = [...(local || []), ...(cloud || [])];
+        for (const s of all) {
+            const id = (s && s.id != null) ? String(s.id)
+                : ('_' + (s.timestamp || 0) + '_' + (s.phone || '') + '_' + (s.wechat || ''));
+            const prev = map.get(id);
+            if (!prev) { map.set(id, s); continue; }
+            const pt = prev.timestamp || 0, ct = s.timestamp || 0;
+            map.set(id, ct >= pt ? s : prev);
+        }
+        return [...map.values()].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    },
+
+    // ===== 双向同步核心 =====
+    async syncBidirectional(direction) {
+        direction = direction || 'both';
+        if (this.getMode() === 'github') return this._syncGitHub(direction);
+
+        // —— 内网穿透服务器 / 本机 模式 ——
+        if (!this.hasCloudServer()) {
+            return { success: false, error: '未配置云端地址。请在「云端设置」中填入家里常开电脑的内网穿透地址，或切换到 GitHub 云端。' };
+        }
+        const [lc, ls, cc, cs] = await Promise.all([
+            this.readLocalContent(), this.readLocalSubs(),
+            this.readCloudContent(), this.readCloudSubs()
+        ]);
+        if (lc === null && cc === null) return { success: false, error: '无法读取本地与云端数据' };
+        if (cc === null) return { success: false, error: '无法连接云端，请检查云端地址和管理密码是否正确' };
+
+        const localContent = lc || {};
+        const cloudContent = cc || {};
+        const localSubs = ls || [];
+        const cloudSubs = cs || [];
+
+        const mergedContent = this.mergeContent(localContent, cloudContent).content;
+        const mergedSubs = this.mergeSubs(localSubs, cloudSubs);
+
+        const errors = [];
+        if (direction === 'up' || direction === 'both') {
+            const wc = await this.writeCloudContent(mergedContent);
+            const ws = await this.writeCloudSubs(mergedSubs);
+            if (!wc.success) errors.push('云端内容：' + wc.error);
+            if (!ws.success) errors.push('云端线索：' + ws.error);
+        }
+        if (direction === 'down' || direction === 'both') {
+            const wl = await this.writeLocalContent(mergedContent);
+            const wsl = await this.writeLocalSubs(mergedSubs);
+            if (!wl.success) errors.push('本地内容：' + wl.error);
+            if (!wsl.success) errors.push('本地线索：' + wsl.error);
+        }
+
+        const ok = errors.length === 0;
+        const ts = this._nowStr();
+        localStorage.setItem('lecang_cloud_lastsync', ts);
+        return {
+            success: ok, error: ok ? '' : errors.join('；'),
+            mergedSubmissions: mergedSubs.length,
+            localSubmissions: localSubs.length,
+            cloudSubmissions: cloudSubs.length,
+            contentSource: this.mergeContent(localContent, cloudContent).source,
+            syncTime: ts
+        };
+    },
+
+    async _syncGitHub(direction) {
+        direction = direction || 'both';
+        if (!this.hasGitHub()) return { success: false, error: '未配置 GitHub 云端（仓库 / Token）' };
+        const [lc, ls, cc, cs] = await Promise.all([
+            this.readLocalContent(), this.readLocalSubs(),
+            this.readGitHubContent(), this.readGitHubSubs()
+        ]);
+        if (cc === null && cs === null) return { success: false, error: '无法读取 GitHub 数据，请检查仓库、分支、路径和 Token（需 repo 权限）' };
+
+        const localContent = lc || {};
+        const cloudContent = cc || {};
+        const localSubs = ls || [];
+        const cloudSubs = cs || [];
+        const mergedContent = this.mergeContent(localContent, cloudContent).content;
+        const mergedSubs = this.mergeSubs(localSubs, cloudSubs);
+
+        const errors = [];
+        if (direction === 'up' || direction === 'both') {
+            const w = await this.writeGitHub({ content: mergedContent, submissions: mergedSubs, updatedAt: Date.now() });
+            if (!w.success) errors.push('GitHub：' + w.error);
+        }
+        if (direction === 'down' || direction === 'both') {
+            const localAvailable = (lc !== null || ls !== null);
+            if (localAvailable) {
+                const wl = await this.writeLocalContent(mergedContent);
+                const wsl = await this.writeLocalSubs(mergedSubs);
+                if (!wl.success) errors.push('本地内容：' + wl.error);
+                if (!wsl.success) errors.push('本地线索：' + wsl.error);
+            }
+            // 始终更新本地浏览器缓存（离线回退）
+            this.setContent(mergedContent);
+            this.setSubmissions(mergedSubs);
+        }
+
+        const ok = errors.length === 0;
+        const ts = this._nowStr();
+        localStorage.setItem('lecang_cloud_lastsync', ts);
+        return {
+            success: ok, error: ok ? '' : errors.join('；'),
+            mergedSubmissions: mergedSubs.length,
+            localSubmissions: localSubs.length,
+            cloudSubmissions: cloudSubs.length,
+            contentSource: this.mergeContent(localContent, cloudContent).source,
+            syncTime: ts
+        };
+    },
+
+    async syncToCloud(contentData, submissionsData) {
+        // 兼容旧接口：上传到当前云端（合并，不覆盖）
+        if (this.getMode() === 'github') {
+            const cloudSubs = await this.readGitHubSubs();
+            const localSubs = submissionsData || (await this.readLocalSubs()) || [];
+            const merged = this.mergeSubs(localSubs, cloudSubs || []);
+            const wc = await this.writeGitHubContent(contentData || (await this.readLocalContent()) || {});
+            const ws = await this.writeGitHubSubs(merged);
+            await this.writeLocalSubs(merged);
+            const ok = wc.success && ws.success;
+            return { success: ok, results: { content: wc.success, submissions: ws.success }, error: ok ? '' : [!wc.success && wc.error, !ws.success && ws.error].filter(Boolean).join('；') };
+        }
+        if (!this.hasCloudServer()) {
+            let c = true, s = true;
+            if (contentData) c = (await this.writeLocalContent(contentData)).success;
+            if (submissionsData) s = (await this.writeLocalSubs(submissionsData)).success;
+            return { success: c && s, results: { content: c, submissions: s } };
+        }
+        const cloudSubs = await this.readCloudSubs();
+        const localSubs = submissionsData || (await this.readLocalSubs()) || [];
+        const merged = this.mergeSubs(localSubs, cloudSubs || []);
+        const wc = await this.writeCloudContent(contentData || (await this.readLocalContent()) || {});
+        const ws = await this.writeCloudSubs(merged);
+        await this.writeLocalSubs(merged);
+        const ok = wc.success && ws.success;
+        return {
+            success: ok, results: { content: wc.success, submissions: ws.success },
+            error: ok ? '' : [!wc.success && wc.error, !ws.success && ws.error].filter(Boolean).join('；')
+        };
+    },
+
+    async syncFromCloud() {
+        if (this.getMode() === 'github') {
+            const cloudContent = await this.readGitHubContent();
+            const cloudSubs = await this.readGitHubSubs();
+            if (cloudContent === null) return { success: false, error: '无法连接 GitHub，请检查仓库和 Token' };
+            const localContent = await this.readLocalContent() || {};
+            const localSubs = await this.readLocalSubs() || [];
+            const mergedContent = this.mergeContent(localContent, cloudContent).content;
+            const mergedSubs = this.mergeSubs(localSubs, cloudSubs || []);
+            const wl = await this.writeLocalContent(mergedContent);
+            const wsl = await this.writeLocalSubs(mergedSubs);
+            const ok = wl.success && wsl.success;
+            const ts = this._nowStr();
+            localStorage.setItem('lecang_cloud_lastsync', ts);
+            return { success: ok, content: mergedContent, submissions: mergedSubs, error: ok ? '' : [!wl.success && wl.error, !wsl.success && wsl.error].filter(Boolean).join('；') };
+        }
+        if (!this.hasCloudServer()) return { success: false, error: '未配置云端地址' };
+        const cloudContent = await this.readCloudContent();
+        const cloudSubs = await this.readCloudSubs();
+        if (cloudContent === null) return { success: false, error: '无法连接云端，请检查云端地址和管理密码' };
+        const localContent = await this.readLocalContent() || {};
+        const localSubs = await this.readLocalSubs() || [];
+        const mergedContent = this.mergeContent(localContent, cloudContent).content;
+        const mergedSubs = this.mergeSubs(localSubs, cloudSubs || []);
+        const wl = await this.writeLocalContent(mergedContent);
+        const wsl = await this.writeLocalSubs(mergedSubs);
+        const ok = wl.success && wsl.success;
+        const ts = this._nowStr();
+        localStorage.setItem('lecang_cloud_lastsync', ts);
+        return { success: ok, content: mergedContent, submissions: mergedSubs, error: ok ? '' : [!wl.success && wl.error, !wsl.success && wsl.error].filter(Boolean).join('；') };
+    },
+
+    async testConnection() {
+        if (this.getMode() === 'github') return this.testGitHub();
+        if (!this.hasCloudServer()) return { success: false, error: '未配置内网穿透服务器地址' };
+        const r = await this._req(this._base(), 'GET', '/status', null, false);
+        if (!r.success) return { success: false, error: r.error || '连接失败' };
+        return { success: true, message: '连接成功！云端服务器工作正常' };
+    },
+
+    async testGitHub() {
+        if (!this.hasGitHub()) return { success: false, error: '未配置 GitHub 仓库或 Token' };
+        const d = await this.readGitHubRaw();
+        if (d && d.success === false) return { success: false, error: d.error };
+        return { success: true, message: 'GitHub 连接成功！仓库可读取' + (d ? '（已有数据）' : '（仓库暂无数据，首次同步将自动创建）') };
+    },
+
+    _nowStr() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    },
+
+    // ===== 本地缓存（离线回退 / 导出）=====
     getContent() {
         try { return JSON.parse(localStorage.getItem('lecang_content') || '{}'); }
         catch (e) { return {}; }
     },
-    setContent(data) {
-        localStorage.setItem('lecang_content', JSON.stringify(data));
-    },
+    setContent(data) { localStorage.setItem('lecang_content', JSON.stringify(data)); },
     getSubmissions() {
         try { return JSON.parse(localStorage.getItem('lecang_submissions') || '[]'); }
         catch (e) { return []; }
     },
+    setSubmissions(arr) { localStorage.setItem('lecang_submissions', JSON.stringify(arr || [])); },
     addSubmissionLocal(submission) {
         const submissions = this.getSubmissions();
         submission.id = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -150,14 +717,13 @@ const CloudSync = {
     // ===== 导出/导入 JSON 备份 =====
     exportAllData(contentData, submissionsData) {
         const data = {
-            version: '3.0',
+            version: '5.0',
             content: contentData || this.getContent(),
             submissions: submissionsData || this.getSubmissions(),
             exportTime: new Date().toISOString()
         };
         return JSON.stringify(data, null, 2);
     },
-
     importAllData(jsonString) {
         try {
             const data = JSON.parse(jsonString);
@@ -165,71 +731,15 @@ const CloudSync = {
                 if (data.content) this.setContent(data.content);
                 if (data.submissions) localStorage.setItem('lecang_submissions', JSON.stringify(data.submissions));
                 return {
-                    success: true,
-                    hasContent: !!data.content,
+                    success: true, hasContent: !!data.content,
                     submissionCount: data.submissions ? data.submissions.length : 0,
-                    content: data.content,
-                    submissions: data.submissions || []
+                    content: data.content, submissions: data.submissions || []
                 };
             } else {
                 this.setContent(data);
                 return { success: true, hasContent: true, submissionCount: 0, content: data, submissions: [] };
             }
-        } catch (e) {
-            return { success: false, error: e.message };
-        }
-    },
-
-    // ===== 一键同步：本地 → 云端 =====
-    async syncToCloud(contentData, submissionsData) {
-        const results = { content: false, submissions: false };
-        const errors = [];
-        if (contentData) {
-            const r = await this.writeContent(contentData);
-            results.content = r.success;
-            if (!r.success && r.error) errors.push('内容: ' + r.error);
-        }
-        if (submissionsData) {
-            const r = await this._api('POST', '/submissions-replace', submissionsData, true);
-            results.submissions = r.success;
-            if (!r.success && r.error) errors.push('客户: ' + r.error);
-        }
-        const anySuccess = results.content || results.submissions;
-        if (anySuccess) {
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            localStorage.setItem('lecang_cloud_lastsync',
-                now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()));
-        }
-        return {
-            success: anySuccess,
-            results: results,
-            error: errors.length > 0 ? errors.join('；') : (anySuccess ? '' : '上传失败')
-        };
-    },
-
-    // ===== 一键同步：云端 → 本地 =====
-    async syncFromCloud() {
-        const cloudContent = await this.readContent();
-        const cloudSubmissions = await this.readSubmissions();
-        if (cloudContent === null && cloudSubmissions === null) {
-            return { success: false, error: '无法从云端读取，请检查代理地址和管理密码' };
-        }
-        if (cloudContent) this.setContent(cloudContent);
-        if (cloudSubmissions) localStorage.setItem('lecang_submissions', JSON.stringify(cloudSubmissions));
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        localStorage.setItem('lecang_cloud_lastsync',
-            now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()));
-        return { success: true, content: cloudContent, submissions: cloudSubmissions || [] };
-    },
-
-    // ===== 测试云端连接 =====
-    async testConnection() {
-        if (!this.isConfigured()) return { success: false, error: '未配置云端代理地址' };
-        const r = await this._api('GET', '/status', null, false);
-        if (!r.success) return { success: false, error: r.error || '连接失败' };
-        return { success: true, message: '连接成功！云端代理工作正常' };
+        } catch (e) { return { success: false, error: e.message }; }
     }
 };
 
