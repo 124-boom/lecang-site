@@ -203,7 +203,10 @@ const CloudSync = {
 
     _headers(admin) {
         const h = { 'Content-Type': 'application/json' };
-        if (admin && this.config.adminKey) h['x-admin-key'] = this.config.adminKey;
+        // 同源后台由 server 注入的管理密钥（优先）；存在时才带，公网 GitHub Pages 静态后台无注入不影响。
+        const injected = (typeof window !== 'undefined') ? window.__LECANG_ADMIN_KEY__ : undefined;
+        if (injected && injected.length >= 8) h['x-admin-key'] = injected;
+        else if (admin && this.config && this.config.adminKey) h['x-admin-key'] = this.config.adminKey;
         // 若内网穿透隧道开启了「访问验证」（HTTP Basic Auth，如部分付费/企业隧道才有；花生壳免费版默认没有），
         // fetch 不会弹窗也不会自动带凭据，必须在这里自动带上，否则请求会被 401 挡掉。一般留空即可。
         if (this.getMode() === 'server' && (this.config.authUser || this.config.authPass)) {
