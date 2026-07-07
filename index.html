@@ -443,6 +443,12 @@
             transform: scale(1.05);
         }
 
+        .product-btn .ext-arrow {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-left: 2px;
+        }
+
         /* About Section */
         .about {
             background: linear-gradient(180deg, var(--paper) 0%, var(--cream) 100%);
@@ -1111,7 +1117,7 @@
                         <p class="product-desc" data-key="product1-desc">印度老料小叶紫檀，木质细腻，金星点点，油性充足。108 颗念珠，助您持诵佛号，静心安神。</p>
                         <div class="product-meta">
                             <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product1-price">1,280</span></span>
-                            <button class="product-btn">查看详情</button>
+                            <button class="product-btn" data-product-link-btn="1">查看详情</button>
                         </div>
                     </div>
                 </div>
@@ -1125,7 +1131,7 @@
                         <p class="product-desc" data-key="product2-desc">纹理如行云流水，色泽温润如玉。海南黄花梨，木中黄金，佩戴把玩，香气幽幽，历久弥珍。</p>
                         <div class="product-meta">
                             <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product2-price">2,680</span></span>
-                            <button class="product-btn">查看详情</button>
+                            <button class="product-btn" data-product-link-btn="2">查看详情</button>
                         </div>
                     </div>
                 </div>
@@ -1139,7 +1145,7 @@
                         <p class="product-desc" data-key="product3-desc">高密度星月菩提，月朗星稀，油性足、瓷度高。盘玩后包浆浑厚，色泽古朴，是修行者的首选。</p>
                         <div class="product-meta">
                             <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product3-price">388</span></span>
-                            <button class="product-btn">查看详情</button>
+                            <button class="product-btn" data-product-link-btn="3">查看详情</button>
                         </div>
                     </div>
                 </div>
@@ -1153,7 +1159,7 @@
                         <p class="product-desc" data-key="product4-desc">天然沉香，香气清雅绵长。沉香通三界，闻之令人身心俱静，是礼佛、品茗、冥想的绝佳伴侣。</p>
                         <div class="product-meta">
                             <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product4-price">3,580</span></span>
-                            <button class="product-btn">查看详情</button>
+                            <button class="product-btn" data-product-link-btn="4">查看详情</button>
                         </div>
                     </div>
                 </div>
@@ -1419,6 +1425,34 @@
                     img.parentElement.classList.add('has-image');
                 }
             });
+            // 商品「查看详情」跳转链接（对应后台“跳转链接”，可选）
+            applyProductLinks(data);
+        }
+
+        // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→隐藏按钮
+        function applyProductLinks(data) {
+            if (!data) return;
+            for (let i = 1; i <= 8; i++) {
+                const btn = document.querySelector('[data-product-link-btn="' + i + '"]');
+                if (!btn) continue;
+                let link = (data['product' + i + '-link'] || '').trim();
+                // 仅允许 http(s)、站内相对路径(/ 开头)或锚点(#) 开头的链接，挡掉 javascript: 等危险协议
+                const safe = /^https?:\/\//i.test(link) || /^\//.test(link) || /^#/.test(link);
+                if (link && safe) {
+                    btn.style.display = '';
+                    btn.classList.add('has-link');
+                    btn.title = '查看详情：' + link;
+                    btn.innerHTML = '查看详情 <span class="ext-arrow">↗</span>';
+                    btn.onclick = (function (url) {
+                        return function () { window.open(url, '_blank', 'noopener'); };
+                    })(link);
+                } else {
+                    btn.style.display = 'none';
+                    btn.classList.remove('has-link');
+                    btn.onclick = null;
+                    btn.innerHTML = '查看详情';
+                }
+            }
         }
 
         // Load saved content.
