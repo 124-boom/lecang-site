@@ -74,7 +74,7 @@ const CloudSync = {
 
     async _refreshFromServer() {
         try {
-            const r = await fetch('/api/sync-config', { signal: AbortSignal.timeout(5000) });
+            const r = await fetch('/api/sync-config', { signal: this._timeoutSignal(5000) });
             if (!r.ok) return;
             const j = await r.json();
             if (!j || !j.success || !j.data) return;
@@ -184,7 +184,18 @@ const CloudSync = {
     getConfig() { return JSON.parse(JSON.stringify(this.config)); },
 
     // 根据当前云端类型选择 base 与路径前缀
-    _base() { return this.getMode() === 'server' ? this.config.workerUrl : ''; },
+    _base() {
+        if (this.getMode() !== 'server') return '';
+        const w = this.config.workerUrl || '';
+        if (!w) return '';
+        // 同源优先：若后台页面与云端地址是同一台服务器（同一域名/主机），
+        // 直接用相对路径，避免浏览器从内网去访问外网域名时因路由器 NAT 回环未开启而失败。
+        try {
+            const wHost = new URL(w).host;
+            if (wHost && wHost === location.host) return '';
+        } catch (e) {}
+        return w;
+    },
     _contentPath() { return this.getMode() === 'server' ? '/content' : '/api/content'; },
     _subsPath() { return this.getMode() === 'server' ? '/submissions' : '/api/submissions'; },
     _submitPath() { return this.getMode() === 'server' ? '/submit' : '/api/submit'; },
@@ -193,8 +204,8 @@ const CloudSync = {
     _headers(admin) {
         const h = { 'Content-Type': 'application/json' };
         if (admin && this.config.adminKey) h['x-admin-key'] = this.config.adminKey;
-        // 花生壳/内网穿透隧道的「访问验证」是 HTTP Basic Auth；fetch 不会弹窗、也不会自动带凭据，
-        // 必须在这里自动带上，否则所有同步/提交请求都会被 401 挡掉（表现为“网络错误/无法连接云端”）。
+        // 若内网穿透隧道开启了「访问验证」（HTTP Basic Auth，如部分付费/企业隧道才有；花生壳免费版默认没有），
+        // fetch 不会弹窗也不会自动带凭据，必须在这里自动带上，否则请求会被 401 挡掉。一般留空即可。
         if (this.getMode() === 'server' && (this.config.authUser || this.config.authPass)) {
             const raw = (this.config.authUser || '') + ':' + (this.config.authPass || '');
             try {
@@ -207,31 +218,48 @@ const CloudSync = {
     },
 
     async _req(base, method, path, body, admin) {
-        const url = (base || '') + path;
-        try {
-            const resp = await fetch(url, {
+        const attempt = async (b) => {
+            const url = (b || '') + path;
+            const ctrl = this._timeoutController(15000);
+            const fetchOpts = {
                 method,
                 headers: this._headers(admin),
-                body: body ? JSON.stringify(body) : undefined,
-                signal: AbortSignal.timeout(15000)
-            });
-            if (resp.status === 401 || resp.status === 403) {
-                return { success: false, error: '管理密码错误或无权限' };
+                body: body ? JSON.stringify(body) : undefined
+            };
+            if (ctrl) fetchOpts.signal = ctrl.signal;
+            try {
+                const resp = await fetch(url, fetchOpts);
+                this._clearTimeout(ctrl);
+                if (resp.status === 401 || resp.status === 403) return { __auth: true };
+                if (!resp.ok) {
+                    let detail = '';
+                    try { detail = (await resp.json()).error || ''; } catch (e) {}
+                    return { __err: '云端返回 ' + resp.status + (detail ? '：' + detail : '') };
+                }
+                const data = await resp.json().catch(() => ({}));
+                return { __ok: true, data };
+            } catch (e) {
+                this._clearTimeout(ctrl);
+                return { __net: true };
             }
-            if (!resp.ok) {
-                let detail = '';
-                try { detail = (await resp.json()).error || ''; } catch (e) {}
-                return { success: false, error: '云端返回 ' + resp.status + (detail ? '：' + detail : '') };
-            }
-            const data = await resp.json().catch(() => ({}));
-            return { success: true, data };
-        } catch (e) {
-            const isLocal = !base;
-            const msg = isLocal
-                ? '本机服务器未连接（请先双击「启动网站.bat」启动本地服务器）'
-                : '无法连接云端：家里电脑服务器可能未启动，或花生壳/内网穿透隧道已断开（请在家里电脑双击「启动网站.bat」并保持隧道在线）';
-            return { success: false, error: msg };
+        };
+        const first = await attempt(base);
+        if (first.__ok) return { success: true, data: first.data };
+        if (first.__auth) return { success: false, error: '管理密码错误或无权限' };
+        if (first.__err) return { success: false, error: first.__err };
+        // 网络失败：若用了绝对云端地址且页面与云端非同源，回退到同源相对地址再试一次，
+        // 绕开家里路由器 NAT 回环未开启、或外网域名临时不可达导致的“假失败”。
+        if (base) {
+            const fb = await attempt('');
+            if (fb.__ok) return { success: true, data: fb.data };
+            if (fb.__auth) return { success: false, error: '管理密码错误或无权限' };
+            if (fb.__err) return { success: false, error: fb.__err };
         }
+        const isLocal = !base;
+        const msg = isLocal
+            ? '本机服务器未连接（请先双击「启动网站.bat」启动本地服务器）'
+            : '无法连接云端：家里电脑服务器可能未启动，或花生壳/内网穿透隧道已断开（请在家里电脑双击「启动网站.bat」并保持隧道在线）';
+        return { success: false, error: msg };
     },
 
     _extractContent(d) {
@@ -246,6 +274,27 @@ const CloudSync = {
         if (Array.isArray(d.submissions)) return d.submissions;
         if (Array.isArray(d.data)) return d.data;
         return [];
+    },
+
+    // 判断内容对象是否含“实质内容”（排除 updatedAt 等元数据）
+    _hasRealContent(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+        return Object.keys(obj).filter(k => k !== 'updatedAt').length > 0;
+    },
+    // 浏览器兼容的超时控制器（避免旧浏览器 AbortSignal.timeout 报错导致请求“假失败”伪装成“无法连接云端”）
+    _timeoutController(ms) {
+        try {
+            if (typeof AbortController === 'undefined') return null;
+            const c = new AbortController();
+            c.__timer = setTimeout(() => { try { c.abort(); } catch (e) {} }, ms);
+            return c;
+        } catch (e) { return null; }
+    },
+    _clearTimeout(c) { if (c && c.__timer) { try { clearTimeout(c.__timer); } catch (e) {} } },
+    // 返回超时信号（旧浏览器无 AbortSignal.timeout 时降级为 undefined）
+    _timeoutSignal(ms) {
+        const c = this._timeoutController(ms);
+        return c ? c.signal : undefined;
     },
 
     // ===== 本机服务器读写（/api/*）=====
@@ -318,7 +367,7 @@ const CloudSync = {
         const apiHeaders = this._ghHeaders(); // 有 Token 自动带上 Authorization
         // 优先走 api.github.com（CORS 友好、数据最新）；公开仓库无需 Token 也能读
         try {
-            const r = await fetch(apiUrl, { headers: apiHeaders, signal: AbortSignal.timeout(15000) });
+            const r = await fetch(apiUrl, { headers: apiHeaders, signal: this._timeoutSignal(15000) });
             if (r.status === 404) return null;
             if (r.ok) {
                 const j = await r.json();
@@ -354,7 +403,7 @@ const CloudSync = {
         ];
         for (const u of sources) {
             try {
-                const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+                const r = await fetch(u, { signal: this._timeoutSignal(12000) });
                 if (r.status === 404) continue;
                 if (r.ok) {
                     const j = await r.json().catch(() => ({}));
@@ -393,7 +442,7 @@ const CloudSync = {
                 // 取当前文件 SHA（不存在则为新建）
                 let sha = null;
                 try {
-                    const r0 = await fetch(url, { headers: this._ghHeaders(), signal: AbortSignal.timeout(15000) });
+                    const r0 = await fetch(url, { headers: this._ghHeaders(), signal: this._timeoutSignal(15000) });
                     if (r0.ok) { const j = await r0.json(); sha = j.sha || null; }
                 } catch (e) {}
                 const r = await fetch(url, {
@@ -404,7 +453,7 @@ const CloudSync = {
                         content: encoded,
                         sha: sha || undefined
                     }),
-                    signal: AbortSignal.timeout(20000)
+                    signal: this._timeoutSignal(20000)
                 });
                 if (r.ok) return { success: true };
                 let msg = '';
@@ -528,26 +577,46 @@ const CloudSync = {
         if (!this.hasCloudServer()) {
             return { success: false, error: '未配置云端地址。请在「云端设置」中填入家里常开电脑的内网穿透地址，或切换到 GitHub 云端。' };
         }
-        const [lc, ls, cc, cs] = await Promise.all([
+        // “仅上传(up)”只需读云端【线索】用于合并去重，不必读云端【内容】——
+        // 本地为权威，既避免慢，也避免“云端较新”回写覆盖本地修改。
+        const reads = [
             this.readLocalContent(), this.readLocalSubs(),
-            this.readCloudContent(), this.readCloudSubs()
-        ]);
+            (direction === 'up' ? Promise.resolve(null) : this.readCloudContent()),
+            this.readCloudSubs()
+        ];
+        const [lc, ls, cc, cs] = await Promise.all(reads);
         if (lc === null && cc === null) return { success: false, error: '无法读取本地与云端数据' };
-        if (cc === null) return { success: false, error: '无法连接云端，请检查云端地址和管理密码是否正确' };
+        // 仅“下载”必须云端可读；“双向”在云端读不到时退化为仅上传本地，保证保存/发布不中断
+        if (direction === 'down' && cc === null) {
+            return { success: false, error: '无法连接云端，请检查云端地址和管理密码是否正确' };
+        }
+        if (direction === 'both' && cc === null) {
+            console.warn('[lecang] 云端读取失败，双向同步退化为仅上传本地内容');
+        }
 
         const localContent = lc || {};
         const cloudContent = cc || {};
         const localSubs = ls || [];
         const cloudSubs = cs || [];
 
-        const mergedContent = this.mergeContent(localContent, cloudContent).content;
+        // 方向敏感合并：
+        //  - 仅上传(up)：本地为权威，直接用本地内容（云端较新也绝不回写覆盖本地）
+        //  - 下载/双向：按 updatedAt 较新者胜出
+        const mergedContent = (direction === 'up')
+            ? (this._hasRealContent(localContent) ? localContent : {})
+            : this.mergeContent(localContent, cloudContent).content;
         const mergedSubs = this.mergeSubs(localSubs, cloudSubs);
 
         const errors = [];
         if (direction === 'up' || direction === 'both') {
-            const wc = await this.writeCloudContent(mergedContent);
+            // 关键防护：本地内容为空时，绝不用 {} 覆盖云端真实内容
+            if (this._hasRealContent(localContent)) {
+                const wc = await this.writeCloudContent(mergedContent);
+                if (!wc.success) errors.push('云端内容：' + wc.error);
+            } else {
+                console.warn('[lecang] 本地内容为空，跳过上传，避免清空云端');
+            }
             const ws = await this.writeCloudSubs(mergedSubs);
-            if (!wc.success) errors.push('云端内容：' + wc.error);
             if (!ws.success) errors.push('云端线索：' + ws.error);
         }
         if (direction === 'down' || direction === 'both') {
@@ -638,7 +707,18 @@ const CloudSync = {
         const cloudSubs = await this.readCloudSubs();
         const localSubs = submissionsData || (await this.readLocalSubs()) || [];
         const merged = this.mergeSubs(localSubs, cloudSubs || []);
-        const wc = await this.writeCloudContent(contentData || (await this.readLocalContent()) || {});
+        // 防护：绝不用空内容 {} 去覆盖云端真实数据
+        const effectiveContent = this._hasRealContent(contentData)
+            ? contentData
+            : (await this.readLocalContent());
+        let wc = { success: true };
+        if (this._hasRealContent(effectiveContent)) {
+            wc = await this.writeCloudContent(effectiveContent);
+            // 同步固化到本机服务器，保证“本地”也是最新（避免本机服务端仍是旧内容被后续误读）
+            await this.writeLocalContent(effectiveContent);
+        } else {
+            console.warn('[lecang] 上传内容为空，跳过云端内容写入，避免清空云端');
+        }
         const ws = await this.writeCloudSubs(merged);
         await this.writeLocalSubs(merged);
         const ok = wc.success && ws.success;
