@@ -83,9 +83,11 @@
         }
 
         .nav-logo img {
-            height: 48px;
+            height: 44px;
             width: auto;
+            display: block;
             object-fit: contain;
+            border-radius: 6px;
         }
 
         .nav-logo-text {
@@ -1356,9 +1358,15 @@
         const API_BASE = '';
         let serverOnline = false;
 
+        // 兼容写法：旧浏览器/微信内核不支持 AbortSignal.timeout()，直接调用会同步抛错，
+        // 被 catch 接住后误判为“无法连接”。降级为“不限时”即可正常工作。
+        function makeTimeout(ms) {
+            try { return AbortSignal.timeout(ms); } catch (e) { return undefined; }
+        }
+
         async function apiGet(path) {
             try {
-                const res = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
+                const res = await fetch(API_BASE + path, { signal: makeTimeout(5000) });
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
@@ -1370,7 +1378,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
-                    signal: AbortSignal.timeout(8000)
+                    signal: makeTimeout(8000)
                 });
                 if (!res.ok) return null;
                 return await res.json();
@@ -1414,55 +1422,106 @@
         }
 
         // Load saved content.
-        // CRITICAL: the committed content file on the static host (data/cloud-data.json) is the
-        // SOURCE OF TRUTH for public display. It needs no token and works for every visitor.
-        // We apply it FIRST so that a stale/empty localStorage or a failed token read can never
-        // shadow the real content. Other sources only refine or fall back.
+        // CRITICAL for the local/PeanutHull deployment: the server's /api/content returns
+        // { success:true, data:{ content:{...}, submissions:[], updatedAt:... } } — the real
+        // text lives under data.content, so we MUST unwrap it before applyContent.
+        // The committed cloud file is also applied first as the authoritative source.
+        // 自动刷新：记录当前内容版本时间，轮询发现更新则自动套用（修复“后台改了前端不变”）
+        let _lastUpdatedAt = 0;
+
         async function loadSavedContent() {
             // 1) Committed content file (GitHub Pages / static host) — authoritative, token-less.
             let committed = null;
             try {
-                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: AbortSignal.timeout(30000) });
+                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: makeTimeout(30000) });
                 if (pub.ok) {
                     const pd = await pub.json().catch(() => null);
                     const content = (pd && pd.content) ? pd.content : pd;
                     if (content && Object.keys(content).length > 0) {
                         committed = content;
                         applyContent(content);
-                        localStorage.setItem('lecang_content', JSON.stringify(content));
+                        try { localStorage.setItem('lecang_content', JSON.stringify(content)); } catch (e) {}
                     }
                 }
-            } catch (e) { /* committed file unreachable → fall back below */ }
+            } catch (e) { /* no committed file on this host → ignore */ }
 
-            // 2) Cloud sync (this browser has a token configured) — refine if it returns real data.
+            // 2) Local server API — THE source for this PeanutHull/local deployment.
+            //    Server returns data wrapped as { content:{...}, ... }; unwrap to the flat map.
+            try {
+                const result = await apiGet('/api/content?t=' + Date.now());
+                if (result && result.success) {
+                    const raw = result.data || {};
+                    if (raw.updatedAt) _lastUpdatedAt = raw.updatedAt;
+                    const data = (raw.content && typeof raw.content === 'object') ? raw.content : raw;
+                    if (data && Object.keys(data).length > 0) {
+                        applyContent(data);
+                        try { localStorage.setItem('lecang_content', JSON.stringify(data)); } catch (e) {}
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // 3) Cloud sync (this browser has a token configured) — refine if it returns real data.
             if (CloudSync.isConfigured()) {
                 try {
                     const cloudData = await CloudSync.readContent();
                     if (cloudData && Object.keys(cloudData).length > 0) {
                         applyContent(cloudData);
-                        localStorage.setItem('lecang_content', JSON.stringify(cloudData));
+                        try { localStorage.setItem('lecang_content', JSON.stringify(cloudData)); } catch (e) {}
                         return;
                     }
-                } catch (e) { /* token read failed (e.g. CORS) → keep committed content */ }
+                } catch (e) {}
             }
 
-            // 3) Local server API (Node/Worker on the same origin) — optional.
-            try {
-                const result = await apiGet('/api/content');
-                if (result && result.success && result.data && Object.keys(result.data).length > 0) {
-                    applyContent(result.data);
-                    localStorage.setItem('lecang_content', JSON.stringify(result.data));
-                    return;
-                }
-            } catch (e) {}
-
-            // 4) This browser's own localStorage — only as a last resort if the committed file was empty/unreachable.
+            // 4) This browser's own localStorage — only as a last resort if nothing above worked.
             if (!committed) {
                 const saved = localStorage.getItem('lecang_content');
                 if (saved) {
                     try { applyContent(JSON.parse(saved)); } catch (e) {}
                 }
             }
+        }
+
+        // 后台保存后，前台自动刷新（无需手动刷新页面）
+        function showPublicToast(msg) {
+            let el = document.getElementById('lecangAutoToast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'lecangAutoToast';
+                el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(74,124,89,.95);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:opacity .3s;pointer-events:none;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(el._t);
+            el._t = setTimeout(() => { el.style.opacity = '0'; }, 2600);
+        }
+
+        async function pollContent() {
+            try {
+                const r = await fetch((API_BASE || '') + '/api/content?t=' + Date.now(), { cache: 'no-store' });
+                if (!r.ok) return;
+                const result = await r.json().catch(() => null);
+                if (!result || !result.success) return;
+                const raw = result.data || {};
+                const data = (raw.content && typeof raw.content === 'object') ? raw.content : raw;
+                const ua = raw.updatedAt || 0;
+                if (ua && _lastUpdatedAt && ua > _lastUpdatedAt) {
+                    if (data && Object.keys(data).length > 0) {
+                        applyContent(data);
+                        localStorage.setItem('lecang_content', JSON.stringify(data));
+                        showPublicToast('内容已自动更新 ✓');
+                    }
+                }
+                if (ua) _lastUpdatedAt = ua;
+            } catch (e) { /* 网络波动忽略 */ }
+        }
+
+        function startContentPoller() {
+            if (window.__lecangPoller) return;
+            window.__lecangPoller = setInterval(pollContent, 20000);
+            // 页面重新可见时（如从后台切回）也立刻检查一次
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) pollContent(); });
         }
 
         async function handleSubmit(e) {
@@ -1542,6 +1601,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await checkServerStatus();
             await loadSavedContent();
+            startContentPoller();
         });
     </script>
 </body>
