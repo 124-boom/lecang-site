@@ -1480,7 +1480,9 @@
 
         async function apiGet(path) {
             try {
-                const res = await fetch(API_BASE + path, { signal: makeTimeout(5000) });
+                const headers = { 'Content-Type': 'application/json' };
+                if (window.__LECANG_ADMIN_KEY__) headers['x-admin-key'] = window.__LECANG_ADMIN_KEY__;
+                const res = await fetch(API_BASE + path, { headers, signal: makeTimeout(5000) });
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
@@ -1488,9 +1490,11 @@
 
         async function apiPost(path, data) {
             try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (window.__LECANG_ADMIN_KEY__) headers['x-admin-key'] = window.__LECANG_ADMIN_KEY__;
                 const res = await fetch(API_BASE + path, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify(data),
                     signal: makeTimeout(8000)
                 });
@@ -1501,7 +1505,9 @@
 
         async function apiDelete(path) {
             try {
-                const res = await fetch(API_BASE + path, { method: 'DELETE', signal: makeTimeout(5000) });
+                const headers = { 'Content-Type': 'application/json' };
+                if (window.__LECANG_ADMIN_KEY__) headers['x-admin-key'] = window.__LECANG_ADMIN_KEY__;
+                const res = await fetch(API_BASE + path, { method: 'DELETE', headers, signal: makeTimeout(5000) });
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
