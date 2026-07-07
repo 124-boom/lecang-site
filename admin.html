@@ -638,6 +638,20 @@
             max-height: 140px;
         }
 
+        .gallery-upload-box .preview-watermark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
         /* ===== History Table ===== */
         .history-table {
             width: 100%;
@@ -1902,14 +1916,16 @@
                 const div = document.createElement('div');
                 div.className = 'form-group';
                 div.innerHTML = `
-                    <label>图片 ${i} <span class="hint">水印字: ${chars[i-1]}</span></label>
+                    <label>图片 ${i}</label>
                     <div class="image-upload-box gallery-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('gallery-file-${i}').click()">
                         ${hasImg
-                            ? `<img src="${hasImg}" class="preview-img" alt="禅意图片">`
+                            ? `<img src="${hasImg}" class="preview-img" alt="禅意图片"><div class="preview-watermark">${currentContent['gallery'+i+'-watermark'] || chars[i-1]}</div>`
                             : `<div class="upload-placeholder"><span class="upload-icon">🖼️</span>点击上传图片</div>`}
                     </div>
                     <input type="file" accept="image/*" id="gallery-file-${i}" style="display:none;" onchange="handleImageUpload(event, '${imgKey}')">
                     ${hasImg ? `<div class="image-actions"><button class="btn btn-danger btn-sm" onclick="clearImage('${imgKey}')">移除图片</button></div>` : ''}
+                    <label style="margin-top:12px;">水印字（显示在图片中央，可自由编辑）</label>
+                    <input type="text" data-key="gallery${i}-watermark" value="${currentContent['gallery'+i+'-watermark'] || chars[i-1]}" maxlength="6" placeholder="${chars[i-1]}">
                     <label style="margin-top:12px;">标签文字</label>
                     <input type="text" data-key="gallery${i}" value="${currentContent['gallery'+i] || ''}">
                 `;
@@ -2030,6 +2046,9 @@
             'gallery1': '禅意空间1-标签', 'gallery2': '禅意空间2-标签',
             'gallery3': '禅意空间3-标签', 'gallery4': '禅意空间4-标签',
             'gallery5': '禅意空间5-标签', 'gallery6': '禅意空间6-标签',
+            'gallery1-watermark': '禅意空间1-水印', 'gallery2-watermark': '禅意空间2-水印',
+            'gallery3-watermark': '禅意空间3-水印', 'gallery4-watermark': '禅意空间4-水印',
+            'gallery5-watermark': '禅意空间5-水印', 'gallery6-watermark': '禅意空间6-水印',
             'contact-tag': '联系方式-英文标签', 'contact-title': '联系方式-中文标题',
             'contact-desc': '联系方式-描述', 'contact-subtitle': '联系方式-副标题',
             'contact-address-title': '地址-标题', 'contact-address': '地址-内容',

@@ -626,10 +626,7 @@
         }
 
         .gallery-item::before {
-            font-family: 'Noto Serif SC', serif;
-            font-size: 48px;
-            color: rgba(166, 38, 32, 0.15);
-            font-weight: 700;
+            display: none;
         }
 
         .gallery-item:nth-child(1)::before { content: '禅'; }
@@ -655,12 +652,34 @@
 
         .gallery-item.has-image .gallery-img {
             display: block;
+            opacity: 0.5;
+        }
+
+        .gallery-item .gallery-watermark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 72px;
+            font-weight: 700;
+            color: rgba(166, 38, 32, 0.18);
+            pointer-events: none;
+            z-index: 2;
+            transition: color 0.4s ease;
+        }
+
+        .gallery-item.has-image .gallery-watermark {
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
         }
 
         .gallery-item span {
             position: absolute;
             bottom: 20px;
             left: 20px;
+            z-index: 3;
             color: var(--warm-brown);
             font-size: 14px;
             background: rgba(248, 243, 234, 0.9);
@@ -1226,12 +1245,12 @@
     <!-- Gallery -->
     <section class="gallery" id="gallery">
         <div class="gallery-grid">
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery1-image" alt=""><span data-key="gallery1">禅意静物</span></div>
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery2-image" alt=""><span data-key="gallery2">手工打磨</span></div>
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery3-image" alt=""><span data-key="gallery3">品茗伴读</span></div>
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery4-image" alt=""><span data-key="gallery4">佛堂供养</span></div>
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery5-image" alt=""><span data-key="gallery5">礼盒包装</span></div>
-            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery6-image" alt=""><span data-key="gallery6">顾客还图</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery1-image" alt=""><div class="gallery-watermark" data-key="gallery1-watermark">禅</div><span data-key="gallery1">禅意静物</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery2-image" alt=""><div class="gallery-watermark" data-key="gallery2-watermark">静</div><span data-key="gallery2">手工打磨</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery3-image" alt=""><div class="gallery-watermark" data-key="gallery3-watermark">心</div><span data-key="gallery3">品茗伴读</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery4-image" alt=""><div class="gallery-watermark" data-key="gallery4-watermark">念</div><span data-key="gallery4">佛堂供养</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery5-image" alt=""><div class="gallery-watermark" data-key="gallery5-watermark">慧</div><span data-key="gallery5">礼盒包装</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery6-image" alt=""><div class="gallery-watermark" data-key="gallery6-watermark">悟</div><span data-key="gallery6">顾客还图</span></div>
         </div>
     </section>
 
