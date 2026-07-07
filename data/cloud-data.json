@@ -18,9 +18,9 @@
     "product2-desc": "纹理如行云流水，色泽温润如玉。海南黄花梨，木中黄金，佩戴把玩，香气幽幽，历久弥珍。",
     "product2-price": "2,680",
     "product2-badge": "收藏级",
-    "product3-name": "星月菩提 正月",
-    "product3-desc": "高密度星月菩提，月朗星稀，油性足、瓷度高。盘玩后包浆浑厚，色泽古朴，是修行者的首选。",
-    "product3-price": "388",
+    "product3-name": "星月菩提",
+    "product3-desc": "同树同枝小冰糖星月，单珠8×7mm，老型桶珠，共 28 颗，正月通体大留白，针尖细星、烟花稀少，品相干净。把玩温润，静心赏玩，是修行者的首选。",
+    "product3-price": "998",
     "product3-badge": "新品",
     "product4-name": "沉香念珠",
     "product4-desc": "天然沉香，香气清雅绵长。沉香通三界，闻之令人身心俱静，是礼佛、品茗、冥想的绝佳伴侣。",
@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783435660608,
+    "updatedAt": 1783436244156,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.png",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -91,8 +91,9 @@
     "gallery4-image": "/data/uploads/ai-image__9__png-1783431672831-g259ne.png",
     "gallery5-image": "/data/uploads/压缩ai-image__7__png-1783431689541-tti41h.png",
     "gallery6-image": "/data/uploads/ai-image__1__png-1783431695105-qpqalz.png",
-    "product1-image": "/data/uploads/小叶紫檀精修_jpg-1783435345624-8136dh.jpg"
+    "product1-image": "/data/uploads/小叶紫檀精修_jpg-1783435345624-8136dh.jpg",
+    "product3-image": "/data/uploads/小叶紫檀精修__1__jpg-1783436100473-m5mujh.jpg"
   },
   "submissions": [],
-  "updatedAt": 1783435662755
+  "updatedAt": 1783436245127
 }
