@@ -1413,43 +1413,56 @@
             });
         }
 
-        // Load saved content: cloud first (if configured), then server API,
-        // then local storage, and finally the committed content file (GitHub Pages / static host, no token needed)
+        // Load saved content.
+        // CRITICAL: the committed content file on the static host (data/cloud-data.json) is the
+        // SOURCE OF TRUTH for public display. It needs no token and works for every visitor.
+        // We apply it FIRST so that a stale/empty localStorage or a failed token read can never
+        // shadow the real content. Other sources only refine or fall back.
         async function loadSavedContent() {
-            // 1) Cloud sync (this browser has token configured) → cross-device, highest priority
-            if (CloudSync.isConfigured()) {
-                const cloudData = await CloudSync.readContent();
-                if (cloudData && Object.keys(cloudData).length > 0) {
-                    applyContent(cloudData);
-                    localStorage.setItem('lecang_content', JSON.stringify(cloudData));
-                    return;
-                }
-            }
-            // 2) Local server API (when running the Node/Worker server on the same origin)
-            const result = await apiGet('/api/content');
-            if (result && result.success && result.data && Object.keys(result.data).length > 0) {
-                applyContent(result.data);
-                localStorage.setItem('lecang_content', JSON.stringify(result.data));
-                return;
-            }
-            // 3) This browser's own localStorage (admin just saved here, freshest)
-            const saved = localStorage.getItem('lecang_content');
-            if (saved) {
-                try { applyContent(JSON.parse(saved)); return; } catch (e) {}
-            }
-            // 4) Committed content file on the static host (e.g. GitHub Pages data/cloud-data.json).
-            //    Lets visitors WITHOUT a token see the latest admin save. Token-less + cache-busted.
+            // 1) Committed content file (GitHub Pages / static host) — authoritative, token-less.
+            let committed = null;
             try {
-                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: AbortSignal.timeout(5000) });
+                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: AbortSignal.timeout(30000) });
                 if (pub.ok) {
                     const pd = await pub.json().catch(() => null);
                     const content = (pd && pd.content) ? pd.content : pd;
                     if (content && Object.keys(content).length > 0) {
+                        committed = content;
                         applyContent(content);
                         localStorage.setItem('lecang_content', JSON.stringify(content));
                     }
                 }
-            } catch (e) { /* no committed file on this host → ignore */ }
+            } catch (e) { /* committed file unreachable → fall back below */ }
+
+            // 2) Cloud sync (this browser has a token configured) — refine if it returns real data.
+            if (CloudSync.isConfigured()) {
+                try {
+                    const cloudData = await CloudSync.readContent();
+                    if (cloudData && Object.keys(cloudData).length > 0) {
+                        applyContent(cloudData);
+                        localStorage.setItem('lecang_content', JSON.stringify(cloudData));
+                        return;
+                    }
+                } catch (e) { /* token read failed (e.g. CORS) → keep committed content */ }
+            }
+
+            // 3) Local server API (Node/Worker on the same origin) — optional.
+            try {
+                const result = await apiGet('/api/content');
+                if (result && result.success && result.data && Object.keys(result.data).length > 0) {
+                    applyContent(result.data);
+                    localStorage.setItem('lecang_content', JSON.stringify(result.data));
+                    return;
+                }
+            } catch (e) {}
+
+            // 4) This browser's own localStorage — only as a last resort if the committed file was empty/unreachable.
+            if (!committed) {
+                const saved = localStorage.getItem('lecang_content');
+                if (saved) {
+                    try { applyContent(JSON.parse(saved)); } catch (e) {}
+                }
+            }
         }
 
         async function handleSubmit(e) {
