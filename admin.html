@@ -1,0 +1,2620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乐藏 · 后台管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #EDE4D0;
+            --deep-red: #A62620;
+            --dark-red: #8B1A16;
+            --light-red: #C43E38;
+            --ink: #2C241B;
+            --warm-brown: #5C4B37;
+            --gold: #B8860B;
+            --paper: #F8F3EA;
+            --white: #FFFFFF;
+            --sidebar-w: 260px;
+            --border: #E5DDD0;
+            --success: #4A7C59;
+            --danger: #C0392B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--ink);
+            color: var(--cream);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(237,228,208,0.1);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .sidebar-header img {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+        }
+
+        .sidebar-header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: rgba(237,228,208,0.5);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            color: rgba(237,228,208,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(237,228,208,0.06);
+            color: var(--cream);
+        }
+
+        .sidebar-nav a.active {
+            background: rgba(166,38,32,0.2);
+            color: var(--cream);
+            border-left-color: var(--deep-red);
+        }
+
+        .sidebar-nav a .icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 20px 24px;
+            border-top: 1px solid rgba(237,228,208,0.1);
+            margin-top: auto;
+        }
+
+        .sidebar-footer a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--deep-red);
+            color: var(--cream);
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--dark-red);
+            transform: translateY(-1px);
+        }
+
+        /* ===== Main Content ===== */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-w);
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-save {
+            background: var(--deep-red);
+            color: var(--cream);
+        }
+
+        .btn-save:hover {
+            background: var(--dark-red);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(166,38,32,0.25);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--warm-brown);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--deep-red);
+            color: var(--deep-red);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid rgba(192,57,43,0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(192,57,43,0.08);
+        }
+
+        .btn-preview {
+            background: var(--warm-brown);
+            color: var(--cream);
+        }
+
+        .btn-preview:hover {
+            background: var(--ink);
+        }
+
+        /* ===== Content Area ===== */
+        .content {
+            padding: 36px;
+            max-width: 900px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-title-bar {
+            margin-bottom: 28px;
+        }
+
+        .section-title-bar h3 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .section-title-bar p {
+            font-size: 14px;
+            color: var(--warm-brown);
+        }
+
+        /* ===== Form Cards ===== */
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h4 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h4 .badge {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            background: var(--cream);
+            color: var(--deep-red);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--warm-brown);
+        }
+
+        .form-group label .hint {
+            font-weight: 400;
+            color: #B0A89C;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--paper);
+            transition: all 0.2s ease;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--deep-red);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(166,38,32,0.08);
+        }
+
+        .form-group textarea {
+            min-height: 90px;
+            line-height: 1.7;
+        }
+
+        /* Product card in admin */
+        .product-edit-card {
+            background: var(--paper);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .product-edit-card .card-num {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--deep-red);
+            color: var(--cream);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .product-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .btn-sm {
+            padding: 7px 16px;
+            font-size: 13px;
+            border-radius: 7px;
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 16px;
+            background: transparent;
+            border: 2px dashed var(--border);
+            color: var(--warm-brown);
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-add:hover {
+            border-color: var(--deep-red);
+            color: var(--deep-red);
+            background: rgba(166,38,32,0.03);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--ink);
+            color: var(--cream);
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* Unsaved indicator */
+        .unsaved-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: none;
+        }
+
+        .unsaved-dot.show {
+            display: block;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Mobile */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--ink);
+            margin: 5px 0;
+        }
+
+        @media (max-width: 992px) {
+            .form-row, .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .topbar {
+                padding: 14px 20px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+
+        /* Color preview chips */
+        .color-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--warm-brown);
+        }
+
+        .color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: var(--white);
+            border-radius: 14px;
+            padding: 20px 24px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--warm-brown);
+            margin-bottom: 6px;
+        }
+
+        .stat-card .stat-value {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--deep-red);
+        }
+
+        .stat-card .stat-extra {
+            font-size: 12px;
+            color: #B0A89C;
+            margin-top: 4px;
+        }
+
+        /* Image upload */
+        .image-upload-box {
+            width: 100%;
+            min-height: 140px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--paper);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-upload-box:hover {
+            border-color: var(--deep-red);
+            background: rgba(166,38,32,0.03);
+        }
+
+        .image-upload-box.has-image {
+            border-style: solid;
+            border-color: var(--border);
+            min-height: auto;
+            padding: 0;
+        }
+
+        .image-upload-box .preview-img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .upload-placeholder {
+            text-align: center;
+            color: var(--warm-brown);
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        .upload-placeholder .upload-icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .gallery-upload-box {
+            min-height: 100px;
+        }
+
+        .gallery-upload-box .preview-img {
+            max-height: 140px;
+        }
+
+        /* ===== History Table ===== */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .history-table th {
+            background: var(--ink);
+            color: var(--cream);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .history-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--ink);
+        }
+        .history-table tbody tr:hover {
+            background: var(--paper);
+        }
+        .history-table tbody tr:nth-child(even) {
+            background: rgba(237,228,208,0.3);
+        }
+        .history-detail {
+            background: var(--paper);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 16px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .history-detail.show {
+            display: block;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 24px;
+        }
+        @media (max-width: 768px) {
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+        .detail-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+        .detail-item .detail-label {
+            font-size: 12px;
+            color: var(--warm-brown);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .detail-item .detail-value {
+            font-size: 14px;
+            color: var(--ink);
+            word-break: break-all;
+        }
+        .history-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="logo/logo.png" alt="乐藏">
+            <div>
+                <h1>乐藏</h1>
+                <p>后台管理系统</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="active" data-section="dashboard"><span class="icon">📊</span> 控制台</a>
+            <a href="#" data-section="brand"><span class="icon">🏷️</span> 品牌信息</a>
+            <a href="#" data-section="hero"><span class="icon">🏠</span> 首页主视觉</a>
+            <a href="#" data-section="products"><span class="icon">📿</span> 产品管理</a>
+            <a href="#" data-section="about"><span class="icon">📖</span> 关于我们</a>
+            <a href="#" data-section="why"><span class="icon">✨</span> 甄选之道</a>
+            <a href="#" data-section="gallery"><span class="icon">🖼️</span> 禅意空间</a>
+            <a href="#" data-section="contact"><span class="icon">📞</span> 联系方式</a>
+            <a href="#" data-section="footer"><span class="icon">📄</span> 页脚信息</a>
+            <a href="#" data-section="customers"><span class="icon">👥</span> 客户信息</a>
+            <a href="#" data-section="history"><span class="icon">📋</span> 提交记录</a>
+            <a href="#" data-section="cloud"><span class="icon">📦</span> 数据同步</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="index.html" target="_blank"><span>👁️</span> 查看前台页面</a>
+        </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <div class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <button class="menu-toggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+                <h2 id="pageTitle">控制台</h2>
+                <span class="unsaved-dot" id="unsavedDot" title="有未保存的更改"></span>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-danger btn-sm" onclick="resetAll()">↺ 恢复默认</button>
+                <button class="btn btn-outline btn-sm" onclick="exportData()">导出配置</button>
+                <button class="btn btn-save btn-sm" onclick="exportCustomersExcel()">👥 导出客户表</button>
+                <button class="btn btn-save" onclick="saveAll()">💾 保存所有更改</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- ===== Dashboard ===== -->
+            <div class="section active" id="section-dashboard">
+                <div class="section-title-bar">
+                    <h3>控制台</h3>
+                    <p>欢迎回来，这里是乐藏网店的内容管理中心</p>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-label">产品数量</div>
+                        <div class="stat-value" id="statProducts">4</div>
+                        <div class="stat-extra">当前展示的佛珠品类</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">编辑模块</div>
+                        <div class="stat-value">8</div>
+                        <div class="stat-extra">可管理的内容区域</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">保存状态</div>
+                        <div class="stat-value" id="statSave" style="font-size:20px;">已同步</div>
+                        <div class="stat-extra">前台页面实时读取最新数据</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">提交记录</div>
+                        <div class="stat-value" id="statHistory">0</div>
+                        <div class="stat-extra">点击「提交记录」查看并导出</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">客户咨询</div>
+                        <div class="stat-value" id="statCustomers">0</div>
+                        <div class="stat-extra">点击「客户信息」查看并导出</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>快速操作</h4>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+                        <a href="#" onclick="goSection('products')" class="btn btn-outline" style="justify-content:center;">📿 管理产品</a>
+                        <a href="#" onclick="goSection('contact')" class="btn btn-outline" style="justify-content:center;">📞 修改联系方式</a>
+                        <a href="#" onclick="goSection('hero')" class="btn btn-outline" style="justify-content:center;">🏠 编辑首页</a>
+                        <a href="#" onclick="goSection('brand')" class="btn btn-outline" style="justify-content:center;">🏷️ 品牌信息</a>
+                        <a href="#" onclick="goSection('history')" class="btn btn-outline" style="justify-content:center;">📋 提交记录</a>
+                        <a href="#" onclick="goSection('customers')" class="btn btn-outline" style="justify-content:center;">👥 客户信息</a>
+                        <a href="#" onclick="goSection('cloud')" class="btn btn-outline" style="justify-content:center;">📦 数据同步</a>
+                        <a href="index.html" target="_blank" class="btn btn-preview" style="justify-content:center;">👁️ 预览前台</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>使用说明</h4>
+                    </div>
+                    <div style="color:var(--warm-brown);font-size:14px;line-height:2;">
+                        <p>① 在左侧菜单选择要编辑的模块，填写或修改内容后点击右上角「保存所有更改」</p>
+                        <p>② 保存后数据会自动同步到前台页面 <code style="background:var(--cream);padding:2px 8px;border-radius:4px;color:var(--deep-red);">index.html</code>，刷新前台即可看到更新</p>
+                        <p>③ 点击「恢复默认」可将所有内容重置为初始状态</p>
+                        <p>④ 点击「导出配置」可下载当前所有内容的 JSON 文件，方便备份</p>
+                        <p>⑤ 产品模块支持新增和删除，最多展示 8 个产品</p>
+                        <p>⑥ 产品和禅意空间均支持上传图片（不超过 2MB），不上传则显示默认样式</p>
+                        <p>⑦ 货币符号可在「品牌信息」中自定义修改</p>
+                        <p>⑧ 每次保存会自动记录提交时间和内容，在「提交记录」中可查看并导出 Excel 表格</p>
+                        <p>⑨ 客户在前台提交咨询后，在「客户信息」中可查看、导出 Excel（含姓名/电话/微信/意向/留言/时间）</p>
+                        <p>⑩ <strong style="color:var(--deep-red);">点击「📦 数据同步」配置云端代理，实现多设备实时同步</strong>（安全，网页不含密钥）</p>
+                        <p>⑪ 配置云端后，点击「上传到云端」/「从云端下载」即可在多台设备间同步数据</p>
+                        <p>⑫ 也可通过「导出全部数据」下载 JSON 文件，在其他设备手动导入（无需云端配置）</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Brand ===== -->
+            <div class="section" id="section-brand">
+                <div class="section-title-bar">
+                    <h3>品牌信息</h3>
+                    <p>设置店铺名称和品牌标识</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>基本品牌信息</h4></div>
+                    <div class="form-group">
+                        <label>导航栏品牌名称</label>
+                        <input type="text" data-key="nav-logo" placeholder="乐藏">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>货币符号 <span class="hint">显示在产品价格前，如 ¥ $ € £</span></label>
+                            <input type="text" data-key="currency-symbol" placeholder="¥" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>预览</label>
+                            <div style="padding:12px 16px;background:var(--paper);border:1px solid var(--border);border-radius:10px;font-size:20px;font-weight:700;color:var(--deep-red);">
+                                <span id="currencyPreview">¥</span><span style="color:var(--warm-brown);font-size:14px;font-weight:400;margin-left:8px;">1,280</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Hero ===== -->
+            <div class="section" id="section-hero">
+                <div class="section-title-bar">
+                    <h3>首页主视觉</h3>
+                    <p>访客进入网站后第一眼看到的内容</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>主视觉内容</h4></div>
+                    <div class="form-group">
+                        <label>主标题 <span class="hint">大字标题</span></label>
+                        <input type="text" data-key="hero-title" placeholder="乐藏">
+                    </div>
+                    <div class="form-group">
+                        <label>副标题 <span class="hint">一句话标语</span></label>
+                        <input type="text" data-key="hero-subtitle" placeholder="一串佛珠，一念清净">
+                    </div>
+                    <div class="form-group">
+                        <label>品牌描述 <span class="hint">详细介绍文字</span></label>
+                        <textarea data-key="hero-desc" rows="4" placeholder="传承东方禅意之美..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>主按钮文字</label>
+                            <input type="text" data-key="hero-btn-1" placeholder="探索精品佛珠">
+                        </div>
+                        <div class="form-group">
+                            <label>次按钮文字</label>
+                            <input type="text" data-key="hero-btn-2" placeholder="联系定制">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Products ===== -->
+            <div class="section" id="section-products">
+                <div class="section-title-bar">
+                    <h3>产品管理</h3>
+                    <p>添加、编辑或删除佛珠产品信息</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>产品区域标题 <span class="badge">区域标题</span></h4>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>英文标签</label>
+                            <input type="text" data-key="products-tag" placeholder="BOUTIQUE COLLECTION">
+                        </div>
+                        <div class="form-group">
+                            <label>中文标题</label>
+                            <input type="text" data-key="products-title" placeholder="精品佛珠">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>区域描述</label>
+                        <textarea data-key="products-desc" rows="3" placeholder="每一串佛珠..."></textarea>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>产品列表 <span class="badge" id="productCount">4 个产品</span></h4>
+                    </div>
+                    <div id="productList"></div>
+                    <button class="btn-add" id="addProductBtn" onclick="addProduct()">+ 添加新产品</button>
+                </div>
+            </div>
+
+            <!-- ===== About ===== -->
+            <div class="section" id="section-about">
+                <div class="section-title-bar">
+                    <h3>关于我们</h3>
+                    <p>品牌故事和特色介绍</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>品牌故事</h4></div>
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" data-key="about-title" placeholder="关于乐藏">
+                    </div>
+                    <div class="form-group">
+                        <label>第一段</label>
+                        <textarea data-key="about-p1" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>第二段</label>
+                        <textarea data-key="about-p2" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>第三段</label>
+                        <textarea data-key="about-p3" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>品牌特色 <span class="badge">4项</span></h4></div>
+                    <div id="featureList"></div>
+                </div>
+            </div>
+
+            <!-- ===== Why ===== -->
+            <div class="section" id="section-why">
+                <div class="section-title-bar">
+                    <h3>甄选之道</h3>
+                    <p>展示品牌优势和卖点</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>区域标题</h4></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>英文标签</label>
+                            <input type="text" data-key="why-tag" placeholder="WHY LEZANG">
+                        </div>
+                        <div class="form-group">
+                            <label>中文标题</label>
+                            <input type="text" data-key="why-title" placeholder="甄选之道">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>区域描述</label>
+                        <textarea data-key="why-desc" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>优势卡片 <span class="badge">4项</span></h4></div>
+                    <div id="whyList"></div>
+                </div>
+            </div>
+
+            <!-- ===== Gallery ===== -->
+            <div class="section" id="section-gallery">
+                <div class="section-title-bar">
+                    <h3>禅意空间</h3>
+                    <p>上传图片和编辑标签文字，不上传图片则显示默认禅意样式</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>图片与标签 <span class="badge">6项</span></h4></div>
+                    <div id="galleryList" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"></div>
+                </div>
+            </div>
+
+            <!-- ===== Contact ===== -->
+            <div class="section" id="section-contact">
+                <div class="section-title-bar">
+                    <h3>联系方式</h3>
+                    <p>客户联系信息，请确保信息准确</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>区域标题</h4></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>英文标签</label>
+                            <input type="text" data-key="contact-tag" placeholder="CONTACT US">
+                        </div>
+                        <div class="form-group">
+                            <label>中文标题</label>
+                            <input type="text" data-key="contact-title" placeholder="联系我们">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>区域描述</label>
+                        <textarea data-key="contact-desc" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>副标题</label>
+                        <input type="text" data-key="contact-subtitle" placeholder="乐藏佛珠 · 静候您的到来">
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>联系信息明细</h4></div>
+                    <div class="form-group">
+                        <label>实体店地址 - 标题</label>
+                        <input type="text" data-key="contact-address-title" placeholder="实体店地址">
+                    </div>
+                    <div class="form-group">
+                        <label>实体店地址 - 内容</label>
+                        <input type="text" data-key="contact-address" placeholder="中国浙江省杭州市西湖区灵隐路 88 号">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>咨询热线 - 标题</label>
+                            <input type="text" data-key="contact-phone-title" placeholder="咨询热线">
+                        </div>
+                        <div class="form-group">
+                            <label>咨询热线 - 号码</label>
+                            <input type="text" data-key="contact-phone" placeholder="400-888-1234">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>微信客服 - 标题</label>
+                            <input type="text" data-key="contact-wechat-title" placeholder="微信客服">
+                        </div>
+                        <div class="form-group">
+                            <label>微信号</label>
+                            <input type="text" data-key="contact-wechat" placeholder="LeZang_Beads">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>电子邮箱 - 标题</label>
+                            <input type="text" data-key="contact-email-title" placeholder="电子邮箱">
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱地址</label>
+                            <input type="text" data-key="contact-email" placeholder="hello@lecang.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>营业时间 - 标题</label>
+                            <input type="text" data-key="contact-hours-title" placeholder="营业时间">
+                        </div>
+                        <div class="form-group">
+                            <label>营业时间 - 内容</label>
+                            <input type="text" data-key="contact-hours" placeholder="每日 09:00 - 21:00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Footer ===== -->
+            <div class="section" id="section-footer">
+                <div class="section-title-bar">
+                    <h3>页脚信息</h3>
+                    <p>网站底部的版权信息</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h4>页脚内容</h4></div>
+                    <div class="form-group">
+                        <label>版权信息</label>
+                        <input type="text" data-key="footer-copy" placeholder="© 2026 乐藏佛珠 LeZang Beads. 保留所有权利。">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Customers ===== -->
+            <div class="section" id="section-customers">
+                <div class="section-title-bar">
+                    <h3>客户信息</h3>
+                    <p>前台客户提交的咨询信息，可导出为 Excel 表格（含提交时间和客户详情）</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>客户咨询列表 <span class="badge" id="customerCount">0 条</span></h4>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--warm-brown);margin-top:8px;">
+                            <span id="serverStatus"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:4px;vertical-align:middle;"></span>未连接服务器</span>
+                            <span>·</span>
+                            <a href="#" onclick="loadSubmissions();return false;" style="color:var(--deep-red);">手动刷新</a>
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button class="btn btn-save btn-sm" onclick="exportCustomersExcel()">📊 导出客户信息 (Excel)</button>
+                        <button class="btn btn-outline btn-sm" onclick="exportTodayCustomers()">导出今日新增</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllCustomers()">清空全部</button>
+                    </div>
+                    <div id="customerTable" style="margin-top:20px;overflow-x:auto;"></div>
+                </div>
+            </div>
+
+            <!-- ===== History ===== -->
+            <div class="section" id="section-history">
+                <div class="section-title-bar">
+                    <h3>提交记录</h3>
+                    <p>每次保存的内容都会自动记录，可导出为 Excel 表格（含提交时间和完整信息）</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h4>提交历史 <span class="badge" id="historyCount">0 条</span></h4>
+                    </div>
+                    <div class="history-actions">
+                        <button class="btn btn-save btn-sm" onclick="exportHistoryExcel()">📋 导出全部记录 (Excel)</button>
+                        <button class="btn btn-outline btn-sm" onclick="exportLatestExcel()">导出最新一条</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearHistory()">清空记录</button>
+                    </div>
+                    <div id="historyTable" style="margin-top:20px;overflow-x:auto;"></div>
+                    <div id="historyDetail" class="history-detail"></div>
+                </div>
+            </div>
+
+            <!-- ===== Data Sync (Intuitive Design) ===== -->
+            <div class="section" id="section-cloud">
+                <div class="section-title-bar">
+                    <h3>数据同步</h3>
+                    <p>在多台设备间同步您的网站内容和客户数据</p>
+                </div>
+
+                <!-- ====== Visual Sync Panel ====== -->
+                <div class="card">
+                    <div style="padding:24px;">
+                        <!-- Connection status banner -->
+                        <div id="syncBanner" style="text-align:center;margin-bottom:20px;padding:14px;border-radius:12px;font-size:15px;font-weight:600;background:var(--cream);color:var(--deep-red);">
+                            ⚠️ 云端未连接，请先在下方「云端设置」中配置
+                        </div>
+
+                        <!-- Two-sided visual diagram -->
+                        <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:0;align-items:stretch;">
+                            <!-- Local side -->
+                            <div style="text-align:center;padding:24px 16px;background:var(--paper);border-radius:14px 0 0 14px;border:2px solid var(--border);border-right:none;">
+                                <div style="font-size:52px;line-height:1;">📱</div>
+                                <div style="font-size:17px;font-weight:700;color:var(--ink);margin-top:10px;">本机</div>
+                                <div style="font-size:12px;color:var(--warm-brown);margin-top:8px;line-height:1.8;">
+                                    网站内容：<strong id="localContentCount" style="color:var(--deep-red);">-</strong> 项<br>
+                                    客户咨询：<strong id="localSubCount" style="color:var(--deep-red);">-</strong> 条
+                                </div>
+                            </div>
+
+                            <!-- Arrow column -->
+                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(201,169,97,0.2),rgba(201,169,97,0.05));">
+                                <div style="font-size:24px;">⬆️</div>
+                                <div style="font-size:9px;color:var(--warm-brown);writing-mode:vertical-rl;margin:4px 0;letter-spacing:2px;">同步</div>
+                                <div style="font-size:24px;">⬇️</div>
+                            </div>
+
+                            <!-- Cloud side -->
+                            <div style="text-align:center;padding:24px 16px;background:var(--paper);border-radius:0 14px 14px 0;border:2px solid var(--border);border-left:none;">
+                                <div style="font-size:52px;line-height:1;">☁️</div>
+                                <div style="font-size:17px;font-weight:700;color:var(--ink);margin-top:10px;">云端</div>
+                                <div style="font-size:12px;color:var(--warm-brown);margin-top:8px;line-height:1.8;" id="cloudDataInfo">
+                                    点击下方按钮<br>查看云端数据
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Last sync time -->
+                        <div style="text-align:center;margin-top:14px;font-size:12px;color:#B0A89C;" id="syncLastTime">
+                            上次同步：从未同步
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== Big Action Buttons ====== -->
+                <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div style="padding:28px 20px;background:linear-gradient(135deg,rgba(201,169,97,0.15),rgba(201,169,97,0.05));border-radius:16px;text-align:center;border:2px solid rgba(201,169,97,0.3);cursor:pointer;transition:all 0.2s;" onclick="syncToCloud()" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(201,169,97,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:44px;">☁️⬆️</div>
+                        <div style="font-size:18px;font-weight:700;color:var(--ink);margin-top:10px;">上传到云端</div>
+                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把本机的网站内容和<br>客户咨询推送到云端</div>
+                    </div>
+                    <div style="padding:28px 20px;background:linear-gradient(135deg,rgba(74,124,89,0.12),rgba(74,124,89,0.04));border-radius:16px;text-align:center;border:2px solid rgba(74,124,89,0.25);cursor:pointer;transition:all 0.2s;" onclick="syncFromCloud()" onmouseover="this.style.transform='scale(1.02)';this.style.boxShadow='0 4px 16px rgba(74,124,89,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:44px;">⬇️📱</div>
+                        <div style="font-size:18px;font-weight:700;color:var(--ink);margin-top:10px;">从云端下载</div>
+                        <div style="font-size:12px;color:var(--warm-brown);margin-top:6px;line-height:1.6;">把云端的最新数据<br>拉取到本机</div>
+                    </div>
+                </div>
+
+                <!-- Sync result feedback area -->
+                <div id="syncResultArea" style="margin-top:16px;display:none;"></div>
+
+                <!-- ====== Collapsible: Cloud Settings ====== -->
+                <div class="card" style="margin-top:20px;">
+                    <div class="card-header" style="cursor:pointer;user-select:none;" onclick="var b=document.getElementById('cloudConfigBody');b.style.display=b.style.display==='none'?'block':'none';var a=this.querySelector('.toggle-arrow');if(a)a.textContent=b.style.display==='none'?'▼ 展开':'▲ 收起';">
+                        <h4>⚙️ 云端设置 <span class="badge" id="cloudStatusBadge">未配置</span> <span class="toggle-arrow" style="font-size:12px;color:var(--warm-brown);float:right;">▼ 展开</span></h4>
+                    </div>
+                    <div id="cloudConfigBody" style="display:none;padding:16px;">
+                        <p style="color:var(--warm-brown);font-size:13px;line-height:1.8;margin-bottom:16px;">
+                            云端由 Cloudflare 代理转发，<strong>网页里不含任何密钥</strong>。填入代理地址和管理密码即可（部署后只需配置一次）。
+                        </p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>云端代理地址 <span class="hint">Worker 地址</span></label>
+                                <input type="text" id="ghWorkerUrl" placeholder="https://lecang-sync.xxx.workers.dev">
+                            </div>
+                            <div class="form-group">
+                                <label>管理密码 <span class="hint">后台写操作需要</span></label>
+                                <input type="password" id="ghAdminKey" placeholder="后台管理密码">
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                            <button class="btn btn-save btn-sm" onclick="saveCloudConfig()">💾 保存配置</button>
+                            <button class="btn btn-outline btn-sm" onclick="testCloudConnection()">🔌 测试连接</button>
+                            <button class="btn btn-danger btn-sm" onclick="clearCloudConfig()">清除配置</button>
+                        </div>
+                        <div id="cloudTestResult" style="margin-top:12px;display:none;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
+                    </div>
+                </div>
+
+                <!-- ====== Collapsible: File Backup ====== -->
+                <div class="card" style="margin-top:20px;">
+                    <div class="card-header" style="cursor:pointer;user-select:none;" onclick="var b=document.getElementById('fileBackupBody');b.style.display=b.style.display==='none'?'block':'none';var a=this.querySelector('.toggle-arrow');if(a)a.textContent=b.style.display==='none'?'▼ 展开':'▲ 收起';">
+                        <h4>📁 文件备份与恢复 <span class="toggle-arrow" style="font-size:12px;color:var(--warm-brown);float:right;">▼ 展开</span></h4>
+                    </div>
+                    <div id="fileBackupBody" style="display:none;padding:16px;">
+                        <div style="padding:14px;background:var(--paper);border-radius:10px;border-left:3px solid var(--gold);margin-bottom:16px;">
+                            <p style="font-size:12px;color:var(--warm-brown);line-height:1.8;margin:0;">
+                                💡 <strong>文件备份</strong>是云端同步的补充方案：把数据导出成文件保存到电脑里，需要时再导入恢复。<br>
+                                如果已配置云端同步，通常不需要手动使用此功能。
+                            </p>
+                        </div>
+
+                        <!-- Hidden stats for JS compatibility -->
+                        <div style="display:none;">
+                            <span id="dataContentFields">-</span>
+                            <span id="dataSubmissionCount">-</span>
+                            <span id="dataLastUpdate">-</span>
+                        </div>
+                        <span id="syncStatusText" style="display:none;"></span>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div style="padding:20px;background:var(--paper);border-radius:12px;text-align:center;border:1px solid var(--border);">
+                                <div style="font-size:32px;margin-bottom:6px;">📥</div>
+                                <h5 style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px;">导出备份文件</h5>
+                                <p style="font-size:12px;color:var(--warm-brown);margin-bottom:12px;line-height:1.5;">下载所有数据为 JSON 文件</p>
+                                <button class="btn btn-save btn-sm" onclick="exportAllDataFile()" style="width:100%;justify-content:center;">导出数据</button>
+                            </div>
+                            <div style="padding:20px;background:var(--paper);border-radius:12px;text-align:center;border:1px solid var(--border);">
+                                <div style="font-size:32px;margin-bottom:6px;">📤</div>
+                                <h5 style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px;">导入备份文件</h5>
+                                <p style="font-size:12px;color:var(--warm-brown);margin-bottom:12px;line-height:1.5;">从 JSON 文件恢复数据</p>
+                                <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+                                <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()" style="width:100%;justify-content:center;">选择文件导入</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="cloud-sync.js"></script>
+    <script>
+        // ===== Default content (matches index.html defaults) =====
+        const defaultContent = {
+            'nav-logo': '乐藏',
+            'currency-symbol': '¥',
+            'hero-title': '乐藏',
+            'hero-subtitle': '一串佛珠，一念清净',
+            'hero-desc': '传承东方禅意之美，甄选天然珍材，以匠心打磨每一颗佛珠。乐藏，愿以珠为媒，伴您在喧嚣尘世中寻得一方宁静，安顿身心，回归本真。',
+            'hero-btn-1': '探索精品佛珠',
+            'hero-btn-2': '联系定制',
+            'products-tag': 'BOUTIQUE COLLECTION',
+            'products-title': '精品佛珠',
+            'products-desc': '每一串佛珠，都承载着制珠人的虔诚与专注。从选材到成珠，历经数十道工序，只为呈现最温润的触感与最庄严的法相。',
+            'product1-name': '小叶紫檀 108 颗',
+            'product1-desc': '印度老料小叶紫檀，木质细腻，金星点点，油性充足。108 颗念珠，助您持诵佛号，静心安神。',
+            'product1-price': '1,280',
+            'product1-badge': '人气之选',
+            'product2-name': '海南黄花梨手串',
+            'product2-desc': '纹理如行云流水，色泽温润如玉。海南黄花梨，木中黄金，佩戴把玩，香气幽幽，历久弥珍。',
+            'product2-price': '2,680',
+            'product2-badge': '收藏级',
+            'product3-name': '星月菩提 正月',
+            'product3-desc': '高密度星月菩提，月朗星稀，油性足、瓷度高。盘玩后包浆浑厚，色泽古朴，是修行者的首选。',
+            'product3-price': '388',
+            'product3-badge': '新品',
+            'product4-name': '沉香念珠',
+            'product4-desc': '天然沉香，香气清雅绵长。沉香通三界，闻之令人身心俱静，是礼佛、品茗、冥想的绝佳伴侣。',
+            'product4-price': '3,580',
+            'product4-badge': '臻选',
+            'about-title': '关于乐藏',
+            'about-p1': '乐藏，取自"以乐为藏，藏心于珠"。我们相信，每一颗佛珠都是一座小小的禅堂，手指轻拨之间，便能与内心深处的宁静相遇。',
+            'about-p2': '自创立以来，乐藏始终坚持"真材、精工、诚心"三字准则。我们深入原产地甄选珍材，与资深工匠合作，以传统技艺结合现代审美，为您打造兼具修行价值与收藏意义的佛珠佳品。',
+            'about-p3': '无论您是佛门信众、文玩藏家，还是寻求内心安宁的都市行者，乐藏都愿以一串好珠，陪伴您的每一次呼吸与念颂。',
+            'feature1-icon': '真',
+            'feature1-title': '真材实料',
+            'feature1-desc': '源头直采，杜绝以次充好，每一颗珠子皆可溯源。',
+            'feature2-icon': '工',
+            'feature2-title': '匠心工艺',
+            'feature2-desc': '数十道工序精细打磨，孔道端正，珠形圆润。',
+            'feature3-icon': '诚',
+            'feature3-title': '诚信经营',
+            'feature3-desc': '明码标价，如实描述，支持七天无理由退换。',
+            'feature4-icon': '养',
+            'feature4-title': '终身养护',
+            'feature4-desc': '免费提供穿珠、换绳、保养等售后服务。',
+            'why-tag': 'WHY LEZANG',
+            'why-title': '甄选之道',
+            'why-desc': '乐藏不仅售卖佛珠，更传递一种生活方式——在纷繁世界中，守住内心的清净与庄严。',
+            'why1-icon': '🌿',
+            'why1-title': '天然珍材',
+            'why1-desc': '严选全球优质产区原木，拒绝染色、注油、做假，保留木材最本真的色泽与香气。',
+            'why2-icon': '🔍',
+            'why2-title': '严选品控',
+            'why2-desc': '每串佛珠均经专业师傅多轮筛选，确保尺寸统一、纹理优美、无裂无补。',
+            'why3-icon': '🙏',
+            'why3-title': '禅意设计',
+            'why3-desc': '融合传统佛珠形制与现代佩戴美学，让佛珠既适合修行，也适合日常搭配。',
+            'why4-icon': '📦',
+            'why4-title': '贴心礼赠',
+            'why4-desc': '精美礼盒包装，附赠保养手册与备用绳，送礼自用两相宜。',
+            'gallery1': '禅意静物',
+            'gallery2': '手工打磨',
+            'gallery3': '品茗伴读',
+            'gallery4': '佛堂供养',
+            'gallery5': '礼盒包装',
+            'gallery6': '顾客还图',
+            'contact-tag': 'CONTACT US',
+            'contact-title': '联系我们',
+            'contact-desc': '无论您想咨询定制、了解养护，还是仅仅想聊聊佛珠，乐藏都随时恭候。',
+            'contact-subtitle': '乐藏佛珠 · 静候您的到来',
+            'contact-address-title': '实体店地址',
+            'contact-address': '中国浙江省杭州市西湖区灵隐路 88 号',
+            'contact-phone-title': '咨询热线',
+            'contact-phone': '400-888-1234',
+            'contact-wechat-title': '微信客服',
+            'contact-wechat': 'LeZang_Beads',
+            'contact-email-title': '电子邮箱',
+            'contact-email': 'hello@lecang.com',
+            'contact-hours-title': '营业时间',
+            'contact-hours': '每日 09:00 - 21:00',
+            'footer-copy': '© 2026 乐藏佛珠 LeZang Beads. 保留所有权利。'
+        };
+
+        // ===== State =====
+        let currentContent = {};
+        let hasUnsaved = false;
+        let serverOnline = false;
+        let customers = [];
+
+        // ===== API helpers =====
+        const API_BASE = '';
+
+        async function apiGet(path) {
+            try {
+                const res = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function apiPost(path, data) {
+            try {
+                const res = await fetch(API_BASE + path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    signal: AbortSignal.timeout(8000)
+                });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function apiDelete(path) {
+            try {
+                const res = await fetch(API_BASE + path, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function checkServerStatus() {
+            const statusEl = document.getElementById('serverStatus');
+            if (CloudSync.isConfigured()) {
+                const r = await CloudSync.testConnection();
+                if (r.success) {
+                    serverOnline = true;
+                    if (statusEl) statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4A7C59;margin-right:4px;vertical-align:middle;"></span>云端已连接 · 实时同步';
+                    return;
+                }
+            }
+            serverOnline = false;
+            if (statusEl) statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:4px;vertical-align:middle;"></span>未连接云端 · 仅本地';
+        }
+
+        // ===== Load content: cloud first (if configured), then server API, fallback to localStorage =====
+        async function loadContent() {
+            // Try cloud sync first (if configured) — ensures cross-device consistency
+            if (CloudSync.isConfigured()) {
+                const cloudData = await CloudSync.readContent();
+                if (cloudData && Object.keys(cloudData).length > 0) {
+                    currentContent = { ...defaultContent, ...cloudData };
+                    localStorage.setItem('lecang_content', JSON.stringify(cloudData));
+                    return;
+                }
+            }
+            // Try server API
+            const result = await apiGet('/api/content');
+            if (result && result.success && result.data && Object.keys(result.data).length > 0) {
+                currentContent = { ...defaultContent, ...result.data };
+                localStorage.setItem('lecang_content', JSON.stringify(result.data));
+                return;
+            }
+            // Fallback to localStorage
+            const saved = localStorage.getItem('lecang_content');
+            if (saved) {
+                try {
+                    currentContent = JSON.parse(saved);
+                } catch(e) {
+                    currentContent = {};
+                }
+            }
+            currentContent = { ...defaultContent, ...currentContent };
+        }
+
+        // ===== Populate form fields =====
+        function populateForm() {
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (currentContent[key] !== undefined) {
+                    el.value = currentContent[key];
+                }
+            });
+        }
+
+        // ===== Collect form data =====
+        function collectFormData() {
+            const data = { ...currentContent };
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                data[key] = el.value;
+            });
+            return data;
+        }
+
+        // ===== Mark unsaved =====
+        function markUnsaved() {
+            hasUnsaved = true;
+            document.getElementById('unsavedDot').classList.add('show');
+            document.getElementById('statSave').textContent = '未保存';
+            document.getElementById('statSave').style.color = 'var(--gold)';
+        }
+
+        function markSaved() {
+            hasUnsaved = false;
+            document.getElementById('unsavedDot').classList.remove('show');
+            document.getElementById('statSave').textContent = '已同步';
+            document.getElementById('statSave').style.color = 'var(--success)';
+        }
+
+        // ===== Save =====
+        async function saveAll() {
+            const data = collectFormData();
+            // Store as innerHTML format for index.html compatibility
+            const htmlData = {};
+            for (const key in data) {
+                htmlData[key] = data[key];
+            }
+            localStorage.setItem('lecang_content', JSON.stringify(htmlData));
+            currentContent = data;
+
+            // Sync to server
+            if (serverOnline) {
+                await apiPost('/api/content', htmlData);
+            }
+
+            // Sync to cloud (localStorage)
+            if (CloudSync.isConfigured()) {
+                await CloudSync.writeContent(htmlData);
+                const now2 = new Date();
+                const pad2 = n => String(n).padStart(2, '0');
+                localStorage.setItem('lecang_cloud_lastsync', pad2(now2.getHours()) + ':' + pad2(now2.getMinutes()));
+            }
+
+            // ===== Record to history =====
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const timeStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+                ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
+            // Save only text fields (exclude base64 images from history to save space)
+            const historyData = {};
+            for (const key in data) {
+                if (!key.endsWith('-image') && typeof data[key] === 'string' && data[key].length < 10000) {
+                    historyData[key] = data[key];
+                }
+            }
+
+            let history = [];
+            try { history = JSON.parse(localStorage.getItem('lecang_history') || '[]'); } catch(e) {}
+
+            history.push({
+                time: timeStr,
+                timestamp: now.getTime(),
+                data: historyData,
+                productCount: getProductCount()
+            });
+
+            // Keep max 200 records
+            if (history.length > 200) history = history.slice(-200);
+            localStorage.setItem('lecang_history', JSON.stringify(history));
+
+            markSaved();
+            renderHistory();
+            updateDataSummary();
+            if (CloudSync.isConfigured()) updateCloudUI();
+            showToast('内容已保存，前台已同步，提交记录已归档', 'success');
+        }
+
+        // ===== Reset =====
+        function resetAll() {
+            if (!confirm('确定要恢复所有内容为默认状态吗？\n\n此操作将清除您所有已保存的修改，不可撤销。')) return;
+            localStorage.removeItem('lecang_content');
+            currentContent = { ...defaultContent };
+            populateForm();
+            renderProducts();
+            renderFeatures();
+            renderWhyCards();
+            renderGallery();
+            markSaved();
+            showToast('已恢复默认内容', 'success');
+        }
+
+        // ===== Export =====
+        function exportData() {
+            const data = collectFormData();
+            // 合并图片数据
+            for (const key in currentContent) {
+                if (key.endsWith('-image') && currentContent[key]) {
+                    data[key] = currentContent[key];
+                }
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lecang-config-' + new Date().toISOString().slice(0,10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('配置文件已导出（含 ' + Object.keys(data).length + ' 个字段）', 'success');
+        }
+
+        // ===== Toast =====
+        function showToast(msg, type, duration) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show ' + (type || '');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => toast.classList.remove('show'), duration || 3000);
+        }
+
+        // ===== Navigation =====
+        function goSection(name) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + name).classList.add('active');
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            document.querySelector(`.sidebar-nav a[data-section="${name}"]`).classList.add('active');
+            const titles = {
+                dashboard: '控制台', brand: '品牌信息', hero: '首页主视觉',
+                products: '产品管理', about: '关于我们', why: '甄选之道',
+                gallery: '禅意空间', contact: '联系方式', footer: '页脚信息',
+                customers: '客户信息', history: '提交记录', cloud: '数据同步'
+            };
+            document.getElementById('pageTitle').textContent = titles[name] || '控制台';
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        document.querySelectorAll('.sidebar-nav a').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                goSection(a.dataset.section);
+            });
+        });
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ===== Product Management =====
+        const productFields = ['name', 'desc', 'price', 'badge'];
+
+        function getProductCount() {
+            let count = 0;
+            for (let i = 1; i <= 8; i++) {
+                if (currentContent['product' + i + '-name']) count = i;
+            }
+            return count;
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productList');
+            container.innerHTML = '';
+            const count = getProductCount();
+            for (let i = 1; i <= count; i++) {
+                const imgKey = 'product' + i + '-image';
+                const hasImg = currentContent[imgKey];
+                const card = document.createElement('div');
+                card.className = 'product-edit-card';
+                card.innerHTML = `
+                    <div class="card-num">${i}</div>
+                    <div class="form-group">
+                        <label>产品图片 <span class="hint">可选，不上传则显示默认样式</span></label>
+                        <div class="image-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('product-file-${i}').click()">
+                            ${hasImg
+                                ? `<img src="${hasImg}" class="preview-img" alt="产品图片">`
+                                : `<div class="upload-placeholder"><span class="upload-icon">📷</span>点击上传产品图片</div>`}
+                        </div>
+                        <input type="file" accept="image/*" id="product-file-${i}" style="display:none;" onchange="handleImageUpload(event, '${imgKey}')">
+                        ${hasImg ? `<div class="image-actions"><button class="btn btn-danger btn-sm" onclick="clearImage('${imgKey}')">移除图片</button></div>` : ''}
+                    </div>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>产品名称</label>
+                            <input type="text" data-key="product${i}-name" value="${currentContent['product'+i+'-name'] || ''}" placeholder="产品名称">
+                        </div>
+                        <div class="form-group">
+                            <label>价格 <span class="hint">不含货币符号</span></label>
+                            <input type="text" data-key="product${i}-price" value="${currentContent['product'+i+'-price'] || ''}" placeholder="1,280">
+                        </div>
+                        <div class="form-group">
+                            <label>标签</label>
+                            <input type="text" data-key="product${i}-badge" value="${currentContent['product'+i+'-badge'] || ''}" placeholder="人气之选">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>产品描述</label>
+                        <textarea data-key="product${i}-desc" rows="2" placeholder="产品描述">${currentContent['product'+i+'-desc'] || ''}</textarea>
+                    </div>
+                    ${count > 1 ? `<div class="product-actions">
+                        <button class="btn btn-danger btn-sm" onclick="removeProduct(${i})">删除此产品</button>
+                    </div>` : ''}
+                `;
+                container.appendChild(card);
+            }
+            document.getElementById('productCount').textContent = count + ' 个产品';
+            document.getElementById('statProducts').textContent = count;
+
+            // Show/hide add button
+            const addBtn = document.getElementById('addProductBtn');
+            if (count >= 8) {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = 'block';
+            }
+
+            // Re-attach listeners
+            attachInputListeners();
+        }
+
+        function addProduct() {
+            const count = getProductCount();
+            if (count >= 8) return;
+            const newIdx = count + 1;
+            currentContent['product' + newIdx + '-name'] = '新产品';
+            currentContent['product' + newIdx + '-desc'] = '请输入产品描述';
+            currentContent['product' + newIdx + '-price'] = '0';
+            currentContent['product' + newIdx + '-badge'] = '新品';
+            renderProducts();
+            markUnsaved();
+            showToast('已添加新产品，请填写信息并保存', 'success');
+        }
+
+        function removeProduct(idx) {
+            if (!confirm('确定要删除这个产品吗？')) return;
+            const count = getProductCount();
+            // Shift products down
+            for (let i = idx; i < count; i++) {
+                const next = i + 1;
+                currentContent['product' + i + '-name'] = currentContent['product' + next + '-name'] || '';
+                currentContent['product' + i + '-desc'] = currentContent['product' + next + '-desc'] || '';
+                currentContent['product' + i + '-price'] = currentContent['product' + next + '-price'] || '';
+                currentContent['product' + i + '-badge'] = currentContent['product' + next + '-badge'] || '';
+                currentContent['product' + i + '-image'] = currentContent['product' + next + '-image'] || '';
+            }
+            // Clear last
+            delete currentContent['product' + count + '-name'];
+            delete currentContent['product' + count + '-desc'];
+            delete currentContent['product' + count + '-price'];
+            delete currentContent['product' + count + '-badge'];
+            delete currentContent['product' + count + '-image'];
+            renderProducts();
+            markUnsaved();
+            showToast('产品已删除，请保存以生效', 'success');
+        }
+
+        // ===== Features =====
+        function renderFeatures() {
+            const container = document.getElementById('featureList');
+            container.innerHTML = '';
+            const featureData = [
+                { num: 1 }, { num: 2 }, { num: 3 }, { num: 4 }
+            ];
+            featureData.forEach(f => {
+                const iconKey = 'feature' + f.num + '-icon';
+                const iconVal = currentContent[iconKey] || '';
+                const div = document.createElement('div');
+                div.style.cssText = 'background:var(--paper);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border);';
+                div.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                        <span style="width:36px;height:36px;background:var(--deep-red);color:var(--cream);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;">${iconVal || f.num}</span>
+                        <span style="font-size:13px;color:var(--warm-brown);font-weight:600;">特色 ${f.num}</span>
+                    </div>
+                    <div class="form-row" style="grid-template-columns:80px 1fr 2fr;">
+                        <div class="form-group">
+                            <label>图标</label>
+                            <input type="text" data-key="${iconKey}" value="${iconVal}" maxlength="2" style="text-align:center;font-size:16px;" placeholder="字">
+                        </div>
+                        <div class="form-group">
+                            <label>标题</label>
+                            <input type="text" data-key="feature${f.num}-title" value="${currentContent['feature'+f.num+'-title'] || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>描述</label>
+                            <input type="text" data-key="feature${f.num}-desc" value="${currentContent['feature'+f.num+'-desc'] || ''}">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            attachInputListeners();
+        }
+
+        // ===== Why Cards =====
+        function renderWhyCards() {
+            const container = document.getElementById('whyList');
+            container.innerHTML = '';
+            for (let i = 1; i <= 4; i++) {
+                const iconKey = 'why' + i + '-icon';
+                const iconVal = currentContent[iconKey] || '';
+                const div = document.createElement('div');
+                div.style.cssText = 'background:var(--paper);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border);';
+                div.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                        <span style="font-size:24px;">${iconVal || i}</span>
+                        <span style="font-size:13px;color:var(--warm-brown);font-weight:600;">优势 ${i}</span>
+                    </div>
+                    <div class="form-row" style="grid-template-columns:80px 1fr;">
+                        <div class="form-group">
+                            <label>图标</label>
+                            <input type="text" data-key="${iconKey}" value="${iconVal}" style="text-align:center;font-size:16px;" placeholder="emoji">
+                        </div>
+                        <div class="form-group">
+                            <label>标题</label>
+                            <input type="text" data-key="why${i}-title" value="${currentContent['why'+i+'-title'] || ''}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea data-key="why${i}-desc" rows="2">${currentContent['why'+i+'-desc'] || ''}</textarea>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+            attachInputListeners();
+        }
+
+        // ===== Gallery =====
+        function renderGallery() {
+            const container = document.getElementById('galleryList');
+            container.innerHTML = '';
+            const chars = ['禅', '静', '心', '念', '慧', '悟'];
+            for (let i = 1; i <= 6; i++) {
+                const imgKey = 'gallery' + i + '-image';
+                const hasImg = currentContent[imgKey];
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label>图片 ${i} <span class="hint">水印字: ${chars[i-1]}</span></label>
+                    <div class="image-upload-box gallery-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('gallery-file-${i}').click()">
+                        ${hasImg
+                            ? `<img src="${hasImg}" class="preview-img" alt="禅意图片">`
+                            : `<div class="upload-placeholder"><span class="upload-icon">🖼️</span>点击上传图片</div>`}
+                    </div>
+                    <input type="file" accept="image/*" id="gallery-file-${i}" style="display:none;" onchange="handleImageUpload(event, '${imgKey}')">
+                    ${hasImg ? `<div class="image-actions"><button class="btn btn-danger btn-sm" onclick="clearImage('${imgKey}')">移除图片</button></div>` : ''}
+                    <label style="margin-top:12px;">标签文字</label>
+                    <input type="text" data-key="gallery${i}" value="${currentContent['gallery'+i] || ''}">
+                `;
+                container.appendChild(div);
+            }
+            attachInputListeners();
+        }
+
+        // ===== Image Upload =====
+        function handleImageUpload(event, key) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('图片不能超过 2MB，请压缩后重试', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentContent[key] = e.target.result;
+                // Re-render the relevant section
+                if (key.startsWith('product')) {
+                    renderProducts();
+                } else if (key.startsWith('gallery')) {
+                    renderGallery();
+                }
+                markUnsaved();
+                showToast('图片已上传，点击保存以生效', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage(key) {
+            if (!confirm('确定要移除这张图片吗？')) return;
+            delete currentContent[key];
+            if (key.startsWith('product')) {
+                renderProducts();
+            } else if (key.startsWith('gallery')) {
+                renderGallery();
+            }
+            markUnsaved();
+            showToast('图片已移除，点击保存以生效', 'success');
+        }
+
+        // ===== Currency preview live update =====
+        document.addEventListener('input', e => {
+            if (e.target.dataset && e.target.dataset.key === 'currency-symbol') {
+                const preview = document.getElementById('currencyPreview');
+                if (preview) preview.textContent = e.target.value || '¥';
+            }
+        });
+
+        // ===== Input listeners =====
+        function attachInputListeners() {
+            document.querySelectorAll('[data-key]').forEach(el => {
+                // Remove old listener by cloning
+                const newEl = el.cloneNode(true);
+                el.parentNode.replaceChild(newEl, el);
+            });
+            document.querySelectorAll('[data-key]').forEach(el => {
+                el.addEventListener('input', () => {
+                    markUnsaved();
+                });
+            });
+        }
+
+        // ===== Beforeunload warning =====
+        window.addEventListener('beforeunload', e => {
+            if (hasUnsaved) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // ===== Keyboard shortcut =====
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveAll();
+            }
+        });
+
+        // ===== Field labels for export =====
+        const fieldLabels = {
+            'nav-logo': '品牌名称',
+            'currency-symbol': '货币符号',
+            'hero-title': '首页主标题',
+            'hero-subtitle': '首页副标题',
+            'hero-desc': '首页品牌描述',
+            'hero-btn-1': '首页主按钮',
+            'hero-btn-2': '首页次按钮',
+            'products-tag': '产品区英文标签',
+            'products-title': '产品区中文标题',
+            'products-desc': '产品区描述'
+        };
+        // Dynamically add product fields (1-8)
+        for (let i = 1; i <= 8; i++) {
+            fieldLabels['product'+i+'-name'] = '产品'+i+'名称';
+            fieldLabels['product'+i+'-price'] = '产品'+i+'价格';
+            fieldLabels['product'+i+'-badge'] = '产品'+i+'标签';
+            fieldLabels['product'+i+'-desc'] = '产品'+i+'描述';
+        }
+        Object.assign(fieldLabels, {
+            'about-title': '关于我们-标题',
+            'about-p1': '关于我们-段落1',
+            'about-p2': '关于我们-段落2',
+            'about-p3': '关于我们-段落3',
+            'feature1-icon': '特色1-图标', 'feature1-title': '特色1-标题', 'feature1-desc': '特色1-描述',
+            'feature2-icon': '特色2-图标', 'feature2-title': '特色2-标题', 'feature2-desc': '特色2-描述',
+            'feature3-icon': '特色3-图标', 'feature3-title': '特色3-标题', 'feature3-desc': '特色3-描述',
+            'feature4-icon': '特色4-图标', 'feature4-title': '特色4-标题', 'feature4-desc': '特色4-描述',
+            'why-tag': '甄选之道-英文标签',
+            'why-title': '甄选之道-中文标题',
+            'why-desc': '甄选之道-描述',
+            'why1-icon': '优势1-图标', 'why1-title': '优势1-标题', 'why1-desc': '优势1-描述',
+            'why2-icon': '优势2-图标', 'why2-title': '优势2-标题', 'why2-desc': '优势2-描述',
+            'why3-icon': '优势3-图标', 'why3-title': '优势3-标题', 'why3-desc': '优势3-描述',
+            'why4-icon': '优势4-图标', 'why4-title': '优势4-标题', 'why4-desc': '优势4-描述',
+            'gallery1': '禅意空间1-标签', 'gallery2': '禅意空间2-标签',
+            'gallery3': '禅意空间3-标签', 'gallery4': '禅意空间4-标签',
+            'gallery5': '禅意空间5-标签', 'gallery6': '禅意空间6-标签',
+            'contact-tag': '联系方式-英文标签', 'contact-title': '联系方式-中文标题',
+            'contact-desc': '联系方式-描述', 'contact-subtitle': '联系方式-副标题',
+            'contact-address-title': '地址-标题', 'contact-address': '地址-内容',
+            'contact-phone-title': '电话-标题', 'contact-phone': '电话-号码',
+            'contact-wechat-title': '微信-标题', 'contact-wechat': '微信-号码',
+            'contact-email-title': '邮箱-标题', 'contact-email': '邮箱-地址',
+            'contact-hours-title': '营业时间-标题', 'contact-hours': '营业时间-内容',
+            'footer-copy': '页脚版权'
+        });
+
+        // ===== History functions =====
+        function getHistory() {
+            try { return JSON.parse(localStorage.getItem('lecang_history') || '[]'); }
+            catch(e) { return []; }
+        }
+
+        function renderHistory() {
+            const history = getHistory();
+            document.getElementById('historyCount').textContent = history.length + ' 条';
+            const statHistory = document.getElementById('statHistory');
+            if (statHistory) statHistory.textContent = history.length;
+
+            const container = document.getElementById('historyTable');
+            if (history.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--warm-brown);font-size:14px;">📋 暂无提交记录<br><span style="font-size:12px;color:#B0A89C;">每次点击「保存所有更改」后会自动记录提交时间和内容</span></div>';
+                document.getElementById('historyDetail').classList.remove('show');
+                document.getElementById('historyDetail').innerHTML = '';
+                return;
+            }
+
+            let html = '<table class="history-table"><thead><tr>';
+            html += '<th>序号</th><th>提交时间</th><th>产品数</th><th>货币符号</th><th>品牌名称</th><th>操作</th>';
+            html += '</tr></thead><tbody>';
+
+            history.slice().reverse().forEach((record, idx) => {
+                const realIdx = history.length - 1 - idx;
+                html += '<tr>';
+                html += '<td>' + (history.length - idx) + '</td>';
+                html += '<td style="white-space:nowrap;font-weight:500;">' + record.time + '</td>';
+                html += '<td>' + (record.productCount || '-') + '</td>';
+                html += '<td>' + (record.data['currency-symbol'] || '¥') + '</td>';
+                html += '<td>' + (record.data['nav-logo'] || '乐藏') + '</td>';
+                html += '<td><button class="btn btn-outline btn-sm" onclick="viewHistoryDetail(' + realIdx + ')">查看详情</button></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function viewHistoryDetail(idx) {
+            const history = getHistory();
+            if (idx < 0 || idx >= history.length) return;
+            const record = history[idx];
+            const panel = document.getElementById('historyDetail');
+
+            if (panel.dataset.idx == idx && panel.classList.contains('show')) {
+                panel.classList.remove('show');
+                return;
+            }
+
+            let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+            html += '<h4 style="font-family:Noto Serif SC,serif;font-size:18px;color:var(--ink);">📝 提交时间：' + record.time + '</h4>';
+            html += '<div style="display:flex;gap:8px;">';
+            html += '<button class="btn btn-outline btn-sm" onclick="exportSingleExcel(' + idx + ')">导出此条</button>';
+            html += '<button class="btn btn-danger btn-sm" onclick="deleteHistoryItem(' + idx + ')">删除此条</button>';
+            html += '</div></div>';
+
+            html += '<div class="detail-grid">';
+
+            // Render all fields with labels
+            for (const key in fieldLabels) {
+                const val = record.data[key];
+                if (val !== undefined && val !== '') {
+                    html += '<div class="detail-item">';
+                    html += '<div class="detail-label">' + fieldLabels[key] + '</div>';
+                    html += '<div class="detail-value">' + escapeHtml(val) + '</div>';
+                    html += '</div>';
+                }
+            }
+
+            html += '</div>';
+            panel.innerHTML = html;
+            panel.dataset.idx = idx;
+            panel.classList.add('show');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function deleteHistoryItem(idx) {
+            if (!confirm('确定要删除这条提交记录吗？')) return;
+            const history = getHistory();
+            history.splice(idx, 1);
+            localStorage.setItem('lecang_history', JSON.stringify(history));
+            renderHistory();
+            showToast('记录已删除', 'success');
+        }
+
+        function clearHistory() {
+            const history = getHistory();
+            if (history.length === 0) { showToast('暂无记录可清空', 'error'); return; }
+            if (!confirm('确定要清空所有提交记录吗？\n\n此操作不可撤销，共 ' + history.length + ' 条记录将被删除。')) return;
+            localStorage.removeItem('lecang_history');
+            renderHistory();
+            showToast('所有提交记录已清空', 'success');
+        }
+
+        // ===== Export to Excel (HTML table format, opens in Excel/WPS) =====
+        function buildExcelHTML(records, title) {
+            // Collect all text field keys
+            const keys = Object.keys(fieldLabels);
+
+            let html = '<table border="1" cellspacing="0" cellpadding="6" style="font-family:Microsoft YaHei,sans-serif;font-size:12px;border-collapse:collapse;">';
+
+            // Title row
+            html += '<tr><td colspan="' + (keys.length + 2) + '" style="background:#A62620;color:#EDE4D0;font-size:16px;font-weight:bold;text-align:center;padding:12px;">' + title + '</td></tr>';
+
+            // Header row
+            html += '<tr style="background:#2C241B;color:#EDE4D0;font-weight:bold;">';
+            html += '<td>序号</td>';
+            html += '<td style="white-space:nowrap;">提交时间</td>';
+            keys.forEach(k => {
+                html += '<td style="white-space:nowrap;">' + fieldLabels[k] + '</td>';
+            });
+            html += '</tr>';
+
+            // Data rows
+            records.forEach((record, idx) => {
+                const bg = idx % 2 === 0 ? '#F8F3EA' : '#FFFFFF';
+                html += '<tr style="background:' + bg + ';">';
+                html += '<td style="text-align:center;">' + (idx + 1) + '</td>';
+                html += '<td style="white-space:nowrap;">' + record.time + '</td>';
+                keys.forEach(k => {
+                    let val = record.data[k] || '';
+                    if (k.includes('price') && val) {
+                        val = (record.data['currency-symbol'] || '¥') + val;
+                    }
+                    html += '<td>' + escapeHtml(val) + '</td>';
+                });
+                html += '</tr>';
+            });
+
+            html += '</table>';
+            return html;
+        }
+
+        function downloadExcel(html, filename) {
+            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportHistoryExcel() {
+            const history = getHistory();
+            if (history.length === 0) {
+                showToast('暂无提交记录可导出', 'error');
+                return;
+            }
+            const html = buildExcelHTML(history, '乐藏佛珠网店 - 提交记录汇总表');
+            const today = new Date().toISOString().slice(0, 10);
+            downloadExcel(html, 'lecang-提交记录汇总-' + today + '.xls');
+            showToast('Excel 表格已导出（共 ' + history.length + ' 条记录）', 'success');
+        }
+
+        function exportLatestExcel() {
+            const history = getHistory();
+            if (history.length === 0) {
+                showToast('暂无提交记录可导出', 'error');
+                return;
+            }
+            const latest = [history[history.length - 1]];
+            const html = buildExcelHTML(latest, '乐藏佛珠网店 - 最新提交记录');
+            const today = new Date().toISOString().slice(0, 10);
+            downloadExcel(html, 'lecang-最新提交-' + today + '.xls');
+            showToast('最新记录已导出', 'success');
+        }
+
+        function exportSingleExcel(idx) {
+            const history = getHistory();
+            if (idx < 0 || idx >= history.length) return;
+            const record = history[idx];
+            const html = buildExcelHTML([record], '乐藏佛珠网店 - 提交记录（' + record.time + '）');
+            downloadExcel(html, 'lecang-提交记录-' + record.time.replace(/[: ]/g, '-') + '.xls');
+            showToast('该条记录已导出', 'success');
+        }
+
+        // ===== Customer submissions =====
+        async function loadSubmissions() {
+            // Try cloud sync first (if configured) — ensures cross-device consistency
+            if (CloudSync.isConfigured()) {
+                const cloudData = await CloudSync.readSubmissions();
+                if (cloudData) {
+                    customers = cloudData;
+                    localStorage.setItem('lecang_submissions', JSON.stringify(customers));
+                    renderCustomers();
+                    return;
+                }
+            }
+            // Try API
+            const result = await apiGet('/api/submissions');
+            if (result && result.success && Array.isArray(result.data)) {
+                customers = result.data;
+            } else {
+                // Fallback to localStorage
+                try {
+                    customers = JSON.parse(localStorage.getItem('lecang_submissions') || '[]');
+                } catch(e) {
+                    customers = [];
+                }
+            }
+            renderCustomers();
+        }
+
+        function renderCustomers() {
+            const container = document.getElementById('customerTable');
+            const countEl = document.getElementById('customerCount');
+            if (countEl) countEl.textContent = customers.length + ' 条';
+            const statEl = document.getElementById('statCustomers');
+            if (statEl) statEl.textContent = customers.length;
+
+            if (customers.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--warm-brown);font-size:14px;">👥 暂无客户咨询<br><span style="font-size:12px;color:#B0A89C;">客户在前台提交咨询后将显示在此处</span></div>';
+                return;
+            }
+
+            let html = '<table class="history-table"><thead><tr>';
+            html += '<th>序号</th><th>提交时间</th><th>姓名</th><th>联系电话</th><th>微信</th><th>意向产品</th><th>咨询内容</th><th>操作</th>';
+            html += '</tr></thead><tbody>';
+
+            customers.slice().reverse().forEach((c, idx) => {
+                const realIdx = customers.length - 1 - idx;
+                html += '<tr>';
+                html += '<td>' + (customers.length - idx) + '</td>';
+                html += '<td style="white-space:nowrap;font-weight:500;">' + escapeHtml(c.time || '') + '</td>';
+                html += '<td style="font-weight:600;color:var(--deep-red);">' + escapeHtml(c.name || '') + '</td>';
+                html += '<td>' + escapeHtml(c.phone || '') + '</td>';
+                html += '<td>' + escapeHtml(c.wechat || '-') + '</td>';
+                html += '<td>' + escapeHtml(c.product || '-') + '</td>';
+                html += '<td style="max-width:300px;white-space:normal;">' + escapeHtml(c.message || '-') + '</td>';
+                html += '<td><button class="btn btn-danger btn-sm" onclick="deleteCustomer(' + realIdx + ')">删除</button></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function deleteCustomer(idx) {
+            const customer = customers[idx];
+            if (!customer) return;
+            if (!confirm('确定要删除 ' + (customer.name || '该客户') + ' 的咨询记录吗？')) return;
+
+            if (customer.id && serverOnline) {
+                const result = await apiDelete('/api/submissions/' + customer.id);
+                if (result && result.success) {
+                    customers.splice(idx, 1);
+                    renderCustomers();
+                    showToast('客户记录已删除', 'success');
+                    return;
+                }
+            }
+            // Delete from cloud first (before splicing local array)
+            if (CloudSync.isConfigured() && customer.id) {
+                await CloudSync.deleteSubmission(customer.id);
+            }
+            // Then remove from local array
+            customers.splice(idx, 1);
+            localStorage.setItem('lecang_submissions', JSON.stringify(customers));
+            renderCustomers();
+            showToast('客户记录已删除', 'success');
+        }
+
+        async function clearAllCustomers() {
+            if (customers.length === 0) { showToast('暂无客户记录可清空', 'error'); return; }
+            if (!confirm('确定要清空所有客户咨询记录吗？\n\n此操作不可撤销，共 ' + customers.length + ' 条记录将被删除。')) return;
+
+            if (serverOnline) {
+                await apiDelete('/api/submissions');
+            }
+            if (CloudSync.isConfigured()) {
+                await CloudSync.clearSubmissions();
+            }
+            customers = [];
+            localStorage.setItem('lecang_submissions', JSON.stringify(customers));
+            renderCustomers();
+            showToast('所有客户记录已清空', 'success');
+        }
+
+        // ===== Export customers to Excel =====
+        function buildCustomerExcel(records, title) {
+            let html = '<table border="1" cellspacing="0" cellpadding="6" style="font-family:Microsoft YaHei,sans-serif;font-size:12px;border-collapse:collapse;">';
+
+            // Title row
+            html += '<tr><td colspan="8" style="background:#A62620;color:#EDE4D0;font-size:16px;font-weight:bold;text-align:center;padding:12px;">' + title + '</td></tr>';
+
+            // Header row
+            html += '<tr style="background:#2C241B;color:#EDE4D0;font-weight:bold;">';
+            html += '<td>序号</td>';
+            html += '<td style="white-space:nowrap;">提交时间</td>';
+            html += '<td>姓名</td>';
+            html += '<td>联系电话</td>';
+            html += '<td>微信号</td>';
+            html += '<td>意向产品</td>';
+            html += '<td>咨询内容</td>';
+            html += '<td>备注</td>';
+            html += '</tr>';
+
+            // Data rows
+            records.forEach((c, idx) => {
+                const bg = idx % 2 === 0 ? '#F8F3EA' : '#FFFFFF';
+                html += '<tr style="background:' + bg + ';">';
+                html += '<td style="text-align:center;">' + (idx + 1) + '</td>';
+                html += '<td style="white-space:nowrap;">' + escapeHtml(c.time || '') + '</td>';
+                html += '<td>' + escapeHtml(c.name || '') + '</td>';
+                html += '<td style="white-space:nowrap;">' + escapeHtml(c.phone || '') + '</td>';
+                html += '<td>' + escapeHtml(c.wechat || '') + '</td>';
+                html += '<td>' + escapeHtml(c.product || '') + '</td>';
+                html += '<td>' + escapeHtml(c.message || '') + '</td>';
+                html += '<td></td>';
+                html += '</tr>';
+            });
+
+            html += '</table>';
+            return html;
+        }
+
+        function exportCustomersExcel() {
+            if (customers.length === 0) {
+                showToast('暂无客户记录可导出', 'error');
+                return;
+            }
+            const html = buildCustomerExcel(customers, '乐藏佛珠网店 - 客户咨询信息表');
+            const today = new Date().toISOString().slice(0, 10);
+            downloadExcel(html, 'lecang-客户信息-' + today + '.xls');
+            showToast('客户信息 Excel 已导出（共 ' + customers.length + ' 条）', 'success');
+        }
+
+        function exportTodayCustomers() {
+            if (customers.length === 0) {
+                showToast('暂无客户记录可导出', 'error');
+                return;
+            }
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCustomers = customers.filter(c => {
+                if (!c.time) return false;
+                return c.time.startsWith(today);
+            });
+            if (todayCustomers.length === 0) {
+                showToast('今日暂无新增客户', 'error');
+                return;
+            }
+            const html = buildCustomerExcel(todayCustomers, '乐藏佛珠网店 - 今日新增客户（' + today + '）');
+            downloadExcel(html, 'lecang-今日客户-' + today + '.xls');
+            showToast('今日新增 ' + todayCustomers.length + ' 条，已导出', 'success');
+        }
+
+        // ===== Data Management (Import/Export) =====
+        function updateDataSummary() {
+            const content = CloudSync.getContent();
+            const submissions = CloudSync.getSubmissions();
+            // New visual elements
+            const localContentEl = document.getElementById('localContentCount');
+            const localSubEl = document.getElementById('localSubCount');
+            if (localContentEl) localContentEl.textContent = Object.keys(content).length;
+            if (localSubEl) localSubEl.textContent = submissions.length;
+            // Hidden legacy elements for JS compatibility
+            const fieldsEl = document.getElementById('dataContentFields');
+            const subEl = document.getElementById('dataSubmissionCount');
+            const updateEl = document.getElementById('dataLastUpdate');
+            if (fieldsEl) fieldsEl.textContent = Object.keys(content).length;
+            if (subEl) subEl.textContent = submissions.length;
+            const lastUpdate = localStorage.getItem('lecang_cloud_lastsync');
+            if (updateEl) updateEl.textContent = lastUpdate || '-';
+        }
+
+        function exportAllDataFile() {
+            // 使用当前内存中的数据（currentContent + customers），避免 localStorage 未保存导致导出默认值
+            const contentData = collectFormData();
+            // 合并图片数据（collectFormData 只收集表单字段，图片存在 currentContent 中）
+            for (const key in currentContent) {
+                if (key.endsWith('-image') && currentContent[key]) {
+                    contentData[key] = currentContent[key];
+                }
+            }
+            const jsonStr = CloudSync.exportAllData(contentData, customers);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const dateStr = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' + pad(now.getHours()) + pad(now.getMinutes());
+            a.href = url;
+            a.download = 'lecang-backup-' + dateStr + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            const now2 = new Date();
+            const pad2 = n => String(n).padStart(2, '0');
+            const timeStr = pad2(now2.getHours()) + ':' + pad2(now2.getMinutes());
+            localStorage.setItem('lecang_cloud_lastsync', timeStr);
+            updateDataSummary();
+            showToast('数据已导出为 JSON 文件（含 ' + Object.keys(contentData).length + ' 个内容字段，' + customers.length + ' 条客户咨询）', 'success');
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!confirm('导入将覆盖当前所有数据，确定继续吗？\n\n建议先导出当前数据作为备份。')) {
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const result = CloudSync.importAllData(e.target.result);
+                if (result.success) {
+                    // 直接使用导入的数据，不调用 loadContent() 避免被服务器数据覆盖
+                    if (result.content) {
+                        currentContent = { ...defaultContent, ...result.content };
+                        localStorage.setItem('lecang_content', JSON.stringify(result.content));
+                    }
+                    if (result.submissions) {
+                        customers = result.submissions;
+                        localStorage.setItem('lecang_submissions', JSON.stringify(customers));
+                    }
+                    // 刷新所有 UI
+                    populateForm();
+                    renderProducts();
+                    renderFeatures();
+                    renderWhyCards();
+                    renderGallery();
+                    renderHistory();
+                    renderCustomers();
+                    updateDataSummary();
+                    markSaved();
+                    showToast('数据导入成功！共导入 ' + (result.content ? Object.keys(result.content).length : 0) + ' 个字段，' + result.submissionCount + ' 条客户咨询', 'success');
+                } else {
+                    showToast('导入失败：' + (result.error || '文件格式错误'), 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ===== Cloud Config & Sync =====
+        function updateCloudUI() {
+            const configured = CloudSync.isConfigured();
+            const badge = document.getElementById('cloudStatusBadge');
+            const banner = document.getElementById('syncBanner');
+            const lastTimeEl = document.getElementById('syncLastTime');
+            const lastSync = localStorage.getItem('lecang_cloud_lastsync');
+
+            // Update banner
+            if (banner) {
+                if (configured) {
+                    const cfg = CloudSync.getConfig();
+                    let host = '';
+                    try { host = new URL(cfg.workerUrl).host; } catch (e) { host = cfg.workerUrl; }
+                    banner.innerHTML = '✅ 云端已连接：<strong>' + host + '</strong>　|　点下面按钮同步数据';
+                    banner.style.background = 'rgba(74,124,89,0.1)';
+                    banner.style.color = 'var(--success)';
+                } else {
+                    banner.innerHTML = '⚠️ 云端未连接，请先在下方「⚙️ 云端设置」中配置';
+                    banner.style.background = 'var(--cream)';
+                    banner.style.color = 'var(--deep-red)';
+                }
+            }
+
+            // Update badge
+            if (badge) {
+                if (configured) {
+                    badge.textContent = '已连接';
+                    badge.style.background = 'rgba(74,124,89,0.15)';
+                    badge.style.color = 'var(--success)';
+                } else {
+                    badge.textContent = '未配置';
+                    badge.style.background = 'var(--cream)';
+                    badge.style.color = 'var(--deep-red)';
+                }
+            }
+
+            // Update last sync time
+            if (lastTimeEl) {
+                lastTimeEl.textContent = '上次同步：' + (lastSync || '从未同步');
+            }
+
+            // Hidden legacy element
+            const syncStatusText = document.getElementById('syncStatusText');
+            if (syncStatusText) syncStatusText.textContent = configured ? '已配置' : '未配置';
+
+            // Fill form fields if configured
+            if (configured) {
+                const cfg = CloudSync.getConfig();
+                const urlEl = document.getElementById('ghWorkerUrl');
+                const keyEl = document.getElementById('ghAdminKey');
+                if (urlEl && !urlEl.value) urlEl.value = cfg.workerUrl;
+                if (keyEl && !keyEl.value) keyEl.value = cfg.adminKey;
+            }
+        }
+
+        function saveCloudConfig() {
+            const url = document.getElementById('ghWorkerUrl').value.trim();
+            const key = document.getElementById('ghAdminKey').value.trim();
+            if (!url) {
+                showToast('请填写云端代理地址', 'error');
+                return;
+            }
+            CloudSync.setConfig(url, key);
+            updateCloudUI();
+            updateDataSummary();
+            showToast('云端配置已保存', 'success');
+        }
+
+        async function testCloudConnection() {
+            const url = document.getElementById('ghWorkerUrl').value.trim();
+            const key = document.getElementById('ghAdminKey').value.trim();
+            if (!url) {
+                showToast('请先填写云端代理地址', 'error');
+                return;
+            }
+            CloudSync.setConfig(url, key);
+            const resultEl = document.getElementById('cloudTestResult');
+            resultEl.style.display = 'block';
+            resultEl.style.background = 'rgba(184,134,11,0.1)';
+            resultEl.style.color = 'var(--warm-brown)';
+            resultEl.textContent = '⏳ 正在测试连接...';
+            const result = await CloudSync.testConnection();
+            if (result.success) {
+                resultEl.style.background = 'rgba(74,124,89,0.1)';
+                resultEl.style.color = 'var(--success)';
+                resultEl.textContent = '✅ ' + result.message;
+                updateCloudUI();
+                // Also update cloud data info
+                const cloudInfo = document.getElementById('cloudDataInfo');
+                if (cloudInfo) {
+                    const cloudContent = await CloudSync.readContent();
+                    const cloudSubs = await CloudSync.readSubmissions();
+                    if (cloudContent && Object.keys(cloudContent).length > 0) {
+                        cloudInfo.innerHTML = '网站内容：<strong style="color:var(--deep-red);">' + Object.keys(cloudContent).length + '</strong> 项<br>客户咨询：<strong style="color:var(--deep-red);">' + (cloudSubs ? cloudSubs.length : 0) + '</strong> 条';
+                    } else {
+                        cloudInfo.innerHTML = '云端暂无数据<br>点「上传到云端」即可创建';
+                    }
+                }
+            } else {
+                resultEl.style.background = 'rgba(192,57,43,0.1)';
+                resultEl.style.color = 'var(--danger)';
+                resultEl.textContent = '❌ ' + result.error;
+            }
+        }
+
+        function clearCloudConfig() {
+            if (!confirm('确定要清除云端配置吗？\n\n清除后本地数据不受影响，但将无法使用云端同步。')) return;
+            CloudSync.setConfig('', '');
+            document.getElementById('ghWorkerUrl').value = '';
+            document.getElementById('ghAdminKey').value = '';
+            const resultEl = document.getElementById('cloudTestResult');
+            if (resultEl) resultEl.style.display = 'none';
+            updateCloudUI();
+            showToast('云端配置已清除', 'success');
+        }
+
+        async function syncToCloud() {
+            if (!CloudSync.isConfigured()) {
+                showToast('请先配置云端设置', 'error');
+                return;
+            }
+            if (!confirm('确定要将当前本机数据上传到云端吗？\n\n这将覆盖云端的数据。')) return;
+            const contentData = collectFormData();
+            for (const key in currentContent) {
+                if (key.endsWith('-image') && currentContent[key]) {
+                    contentData[key] = currentContent[key];
+                }
+            }
+            const resultArea = document.getElementById('syncResultArea');
+            if (resultArea) {
+                resultArea.style.display = 'block';
+                resultArea.style.padding = '16px';
+                resultArea.style.borderRadius = '12px';
+                resultArea.style.background = 'rgba(184,134,11,0.08)';
+                resultArea.style.color = 'var(--warm-brown)';
+                resultArea.style.fontSize = '14px';
+                resultArea.style.textAlign = 'center';
+                resultArea.innerHTML = '⏳ 正在上传到云端...';
+            }
+            const result = await CloudSync.syncToCloud(contentData, customers);
+            if (resultArea) {
+                if (result.success) {
+                    const parts = [];
+                    parts.push('网站内容 ' + (result.results.content ? '✅' : '❌'));
+                    parts.push('客户咨询 ' + (result.results.submissions ? '✅' : '❌'));
+                    resultArea.style.background = 'rgba(74,124,89,0.1)';
+                    resultArea.style.color = 'var(--success)';
+                    resultArea.innerHTML = '✅ 上传完成！<br><span style="font-size:13px;">' + parts.join('　') + '</span>';
+                    if (!result.results.content || !result.results.submissions) {
+                        resultArea.innerHTML += '<br><span style="font-size:12px;color:var(--danger);">' + (result.error || '') + '</span>';
+                    }
+                } else {
+                    resultArea.style.background = 'rgba(192,57,43,0.1)';
+                    resultArea.style.color = 'var(--danger)';
+                    resultArea.innerHTML = '❌ 上传失败<br><span style="font-size:12px;">' + (result.error || '未知错误') + '</span>';
+                }
+            }
+            if (result.success) {
+                updateCloudUI();
+                updateDataSummary();
+                // Update cloud data info
+                const cloudInfo = document.getElementById('cloudDataInfo');
+                if (cloudInfo) {
+                    cloudInfo.innerHTML = '网站内容：<strong style="color:var(--deep-red);">' + Object.keys(contentData).length + '</strong> 项<br>客户咨询：<strong style="color:var(--deep-red);">' + customers.length + '</strong> 条';
+                }
+            }
+        }
+
+        async function syncFromCloud() {
+            if (!CloudSync.isConfigured()) {
+                showToast('请先配置云端设置', 'error');
+                return;
+            }
+            if (!confirm('确定要从云端下载数据到本机吗？\n\n这将覆盖当前本机的数据。')) return;
+            const resultArea = document.getElementById('syncResultArea');
+            if (resultArea) {
+                resultArea.style.display = 'block';
+                resultArea.style.padding = '16px';
+                resultArea.style.borderRadius = '12px';
+                resultArea.style.background = 'rgba(184,134,11,0.08)';
+                resultArea.style.color = 'var(--warm-brown)';
+                resultArea.style.fontSize = '14px';
+                resultArea.style.textAlign = 'center';
+                resultArea.innerHTML = '⏳ 正在从云端下载...';
+            }
+            const result = await CloudSync.syncFromCloud();
+            if (result.success) {
+                if (result.content) {
+                    currentContent = { ...defaultContent, ...result.content };
+                }
+                if (result.submissions) {
+                    customers = result.submissions;
+                }
+                populateForm();
+                renderProducts();
+                renderFeatures();
+                renderWhyCards();
+                renderGallery();
+                renderHistory();
+                renderCustomers();
+                updateCloudUI();
+                updateDataSummary();
+                markSaved();
+                const contentFields = result.content ? Object.keys(result.content).length : 0;
+                const subCount = result.submissions ? result.submissions.length : 0;
+                if (resultArea) {
+                    resultArea.style.background = 'rgba(74,124,89,0.1)';
+                    resultArea.style.color = 'var(--success)';
+                    resultArea.innerHTML = '✅ 下载完成！<br><span style="font-size:13px;">网站内容 ' + contentFields + ' 项，客户咨询 ' + subCount + ' 条</span>';
+                }
+                // Update cloud data info
+                const cloudInfo = document.getElementById('cloudDataInfo');
+                if (cloudInfo) {
+                    cloudInfo.innerHTML = '网站内容：<strong style="color:var(--deep-red);">' + contentFields + '</strong> 项<br>客户咨询：<strong style="color:var(--deep-red);">' + subCount + '</strong> 条';
+                }
+            } else {
+                if (resultArea) {
+                    resultArea.style.background = 'rgba(192,57,43,0.1)';
+                    resultArea.style.color = 'var(--danger)';
+                    resultArea.innerHTML = '❌ 下载失败<br><span style="font-size:12px;">' + (result.error || '云端暂无数据') + '</span>';
+                }
+            }
+        }
+
+        // ===== Init =====
+        (async () => {
+            // Auto-fill known worker URL if not already configured
+            if (!CloudSync.isConfigured()) {
+                const urlEl = document.getElementById('ghWorkerUrl');
+                if (urlEl && !urlEl.value) urlEl.value = CloudSync._defaultWorker;
+            }
+            await checkServerStatus();
+            await loadContent();
+            populateForm();
+            renderProducts();
+            renderFeatures();
+            renderWhyCards();
+            renderGallery();
+            renderHistory();
+            await loadSubmissions();
+            attachInputListeners();
+            updateDataSummary();
+            updateCloudUI();
+        })();
+
+        // Auto-refresh customer submissions every 30 seconds
+        setInterval(() => {
+            if (serverOnline) loadSubmissions();
+        }, 30000);
+    </script>
+</body>
+</html>

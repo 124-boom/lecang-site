@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乐藏 · 佛珠念珠 | 传承东方禅意之美</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #EDE4D0;
+            --deep-red: #A62620;
+            --dark-red: #8B1A16;
+            --light-red: #C43E38;
+            --ink: #2C241B;
+            --warm-brown: #5C4B37;
+            --gold: #B8860B;
+            --paper: #F8F3EA;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+            color: var(--ink);
+            background-color: var(--paper);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* Traditional pattern overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(166, 38, 32, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(184, 134, 11, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 999;
+            background: rgba(248, 243, 234, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(166, 38, 32, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-logo img {
+            height: 48px;
+            width: auto;
+        }
+
+        .nav-logo-text {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--deep-red);
+            letter-spacing: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--warm-brown);
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+            padding: 5px 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--deep-red);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--deep-red);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 25px;
+            height: 2px;
+            background: var(--deep-red);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+            position: relative;
+            padding: 120px 30px 80px;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23a62620' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-logo img {
+            max-width: 380px;
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 20px 40px rgba(166, 38, 32, 0.2));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .hero-text h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--deep-red);
+            margin-bottom: 20px;
+            letter-spacing: 12px;
+            line-height: 1.2;
+        }
+
+        .hero-text .subtitle {
+            font-size: 24px;
+            color: var(--warm-brown);
+            margin-bottom: 16px;
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .hero-text .desc {
+            font-size: 17px;
+            color: var(--warm-brown);
+            margin-bottom: 40px;
+            line-height: 2;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 16px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--deep-red);
+            color: var(--cream);
+            box-shadow: 0 4px 20px rgba(166, 38, 32, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--dark-red);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(166, 38, 32, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--deep-red);
+            border: 2px solid var(--deep-red);
+        }
+
+        .btn-secondary:hover {
+            background: var(--deep-red);
+            color: var(--cream);
+            transform: translateY(-3px);
+        }
+
+        /* Section Common Styles */
+        section {
+            padding: 100px 30px;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+
+        .section-tag {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 14px;
+            color: var(--deep-red);
+            letter-spacing: 6px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .section-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 16px;
+            letter-spacing: 4px;
+        }
+
+        .section-line {
+            width: 60px;
+            height: 3px;
+            background: var(--deep-red);
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        .section-desc {
+            max-width: 600px;
+            margin: 24px auto 0;
+            color: var(--warm-brown);
+            font-size: 16px;
+            line-height: 1.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Products Section */
+        .products {
+            background: var(--white);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+        }
+
+        .product-card {
+            background: var(--paper);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(166, 38, 32, 0.08);
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+
+        .product-image {
+            height: 260px;
+            background: linear-gradient(135deg, var(--cream) 0%, #E8DED0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image::before {
+            content: '佛珠';
+            font-family: 'Noto Serif SC', serif;
+            font-size: 72px;
+            color: rgba(166, 38, 32, 0.1);
+            font-weight: 700;
+        }
+
+        .product-image.has-image::before {
+            display: none;
+        }
+
+        .product-image .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .product-image.has-image .product-img {
+            display: block;
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--deep-red);
+            color: var(--cream);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .product-info {
+            padding: 28px;
+        }
+
+        .product-name {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .product-desc {
+            font-size: 14px;
+            color: var(--warm-brown);
+            margin-bottom: 18px;
+            line-height: 1.7;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--deep-red);
+        }
+
+        .product-price .currency-symbol {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .product-btn {
+            padding: 10px 22px;
+            background: var(--deep-red);
+            color: var(--cream);
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .product-btn:hover {
+            background: var(--dark-red);
+            transform: scale(1.05);
+        }
+
+        /* About Section */
+        .about {
+            background: linear-gradient(180deg, var(--paper) 0%, var(--cream) 100%);
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 70px;
+            align-items: center;
+        }
+
+        .about-image {
+            position: relative;
+        }
+
+        .about-image-main {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--light-red) 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .about-image-main::before {
+            content: '樂藏';
+            font-family: 'Noto Serif SC', serif;
+            font-size: 140px;
+            color: rgba(237, 228, 208, 0.25);
+            font-weight: 700;
+            letter-spacing: 20px;
+        }
+
+        .about-image-main img {
+            position: absolute;
+            width: 70%;
+            height: auto;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.2));
+        }
+
+        .about-text h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 24px;
+            letter-spacing: 4px;
+            line-height: 1.4;
+        }
+
+        .about-text p {
+            color: var(--warm-brown);
+            margin-bottom: 20px;
+            line-height: 2;
+            font-size: 16px;
+        }
+
+        .about-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .about-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            background: var(--deep-red);
+            color: var(--cream);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .feature-text h4 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            margin-bottom: 6px;
+            color: var(--ink);
+        }
+
+        .feature-text p {
+            font-size: 14px;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* Why Choose Us */
+        .why-us {
+            background: var(--white);
+        }
+
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+
+        .why-card {
+            text-align: center;
+            padding: 40px 24px;
+            background: var(--paper);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(166, 38, 32, 0.06);
+        }
+
+        .why-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            border-color: rgba(166, 38, 32, 0.15);
+        }
+
+        .why-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+            border: 2px solid var(--deep-red);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: var(--deep-red);
+        }
+
+        .why-card h3 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+
+        .why-card p {
+            font-size: 14px;
+            color: var(--warm-brown);
+            line-height: 1.7;
+        }
+
+        /* Gallery / Atmosphere */
+        .gallery {
+            background: var(--cream);
+            padding: 80px 30px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            aspect-ratio: 4/3;
+            background: var(--paper);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        .gallery-item::before {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 48px;
+            color: rgba(166, 38, 32, 0.15);
+            font-weight: 700;
+        }
+
+        .gallery-item:nth-child(1)::before { content: '禅'; }
+        .gallery-item:nth-child(2)::before { content: '静'; }
+        .gallery-item:nth-child(3)::before { content: '心'; }
+        .gallery-item:nth-child(4)::before { content: '念'; }
+        .gallery-item:nth-child(5)::before { content: '慧'; }
+        .gallery-item:nth-child(6)::before { content: '悟'; }
+
+        .gallery-item.has-image::before {
+            display: none;
+        }
+
+        .gallery-item .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        .gallery-item.has-image .gallery-img {
+            display: block;
+        }
+
+        .gallery-item span {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: var(--warm-brown);
+            font-size: 14px;
+            background: rgba(248, 243, 234, 0.9);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        /* Contact Section */
+        .contact {
+            background: var(--ink);
+            color: var(--cream);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M40 0c0 22-18 40-40 40s40 18 40 40-18 40-40 40c22 0 40-18 40-40s18-40 40-40-40-18-40-40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .contact .section-title {
+            color: var(--cream);
+        }
+
+        .contact .section-desc {
+            color: rgba(237, 228, 208, 0.8);
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .contact-info h3 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: var(--cream);
+            letter-spacing: 3px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .contact-icon {
+            width: 50px;
+            height: 50px;
+            min-width: 50px;
+            background: var(--deep-red);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--cream);
+        }
+
+        .contact-text h4 {
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: var(--cream);
+            font-weight: 600;
+        }
+
+        .contact-text p {
+            font-size: 15px;
+            color: rgba(237, 228, 208, 0.7);
+            line-height: 1.6;
+        }
+
+        .contact-form {
+            background: rgba(237, 228, 208, 0.08);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(237, 228, 208, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: rgba(237, 228, 208, 0.9);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(237, 228, 208, 0.1);
+            border: 1px solid rgba(237, 228, 208, 0.2);
+            border-radius: 12px;
+            color: var(--cream);
+            font-family: inherit;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(237, 228, 208, 0.4);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--deep-red);
+            background: rgba(237, 228, 208, 0.15);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--deep-red);
+            color: var(--cream);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .submit-btn:hover {
+            background: var(--light-red);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-success {
+            display: none;
+            background: rgba(74, 124, 89, 0.15);
+            border: 1px solid rgba(74, 124, 89, 0.4);
+            color: #8FBC8F;
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-success.show {
+            display: block;
+        }
+
+        .server-badge {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 998;
+            background: rgba(74, 124, 89, 0.9);
+            color: #fff;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .server-badge.show {
+            display: flex;
+        }
+
+        .server-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: #6FF06F;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Footer */
+        footer {
+            background: #1A1612;
+            color: rgba(237, 228, 208, 0.6);
+            padding: 50px 30px 30px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            height: 60px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(237, 228, 208, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--cream);
+        }
+
+        .footer-copy {
+            font-size: 13px;
+            color: rgba(237, 228, 208, 0.4);
+            padding-top: 24px;
+            border-top: 1px solid rgba(237, 228, 208, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero-content,
+            .about-content,
+            .contact-grid {
+                grid-template-columns: 1fr;
+                gap: 50px;
+            }
+
+            .hero-text h1 {
+                font-size: 48px;
+                text-align: center;
+            }
+
+            .hero-text .subtitle,
+            .hero-text .desc {
+                text-align: center;
+                max-width: 100%;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-logo {
+                order: -1;
+            }
+
+            .hero-logo img {
+                max-width: 280px;
+            }
+
+            .why-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            .hero-text h1 {
+                font-size: 36px;
+                letter-spacing: 8px;
+            }
+
+            .hero-text .subtitle {
+                font-size: 18px;
+            }
+
+            section {
+                padding: 70px 20px;
+            }
+
+            .section-title {
+                font-size: 32px;
+            }
+
+            .about-features {
+                grid-template-columns: 1fr;
+            }
+
+            .why-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-form {
+                padding: 28px;
+            }
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            background: var(--paper);
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 998;
+        }
+
+        .mobile-menu.active {
+            display: block;
+        }
+
+        .mobile-menu a {
+            display: block;
+            padding: 14px 0;
+            color: var(--warm-brown);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(166, 38, 32, 0.1);
+        }
+
+        /* Print styles */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <img src="logo/logo.png" alt="乐藏佛珠">
+                <span class="nav-logo-text" data-key="nav-logo">乐藏</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#products">精品佛珠</a></li>
+                <li><a href="#about">关于乐藏</a></li>
+                <li><a href="#why">甄选之道</a></li>
+                <li><a href="#gallery">禅意空间</a></li>
+                <li><a href="#contact">联系我们</a></li>
+            </ul>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="菜单">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#products" onclick="toggleMobileMenu()">精品佛珠</a>
+        <a href="#about" onclick="toggleMobileMenu()">关于乐藏</a>
+        <a href="#why" onclick="toggleMobileMenu()">甄选之道</a>
+        <a href="#gallery" onclick="toggleMobileMenu()">禅意空间</a>
+        <a href="#contact" onclick="toggleMobileMenu()">联系我们</a>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 data-key="hero-title">乐藏</h1>
+                <p class="subtitle" data-key="hero-subtitle">一串佛珠，一念清净</p>
+                <p class="desc" data-key="hero-desc">传承东方禅意之美，甄选天然珍材，以匠心打磨每一颗佛珠。乐藏，愿以珠为媒，伴您在喧嚣尘世中寻得一方宁静，安顿身心，回归本真。</p>
+                <div class="hero-buttons">
+                    <a href="#products" class="btn btn-primary" data-key="hero-btn-1">探索精品佛珠</a>
+                    <a href="#contact" class="btn btn-secondary" data-key="hero-btn-2">联系定制</a>
+                </div>
+            </div>
+            <div class="hero-logo">
+                <img src="logo/logo.png" alt="乐藏佛珠店标">
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag" data-key="products-tag">BOUTIQUE COLLECTION</span>
+                <h2 class="section-title" data-key="products-title">精品佛珠</h2>
+                <div class="section-line"></div>
+                <p class="section-desc" data-key="products-desc">每一串佛珠，都承载着制珠人的虔诚与专注。从选材到成珠，历经数十道工序，只为呈现最温润的触感与最庄严的法相。</p>
+            </div>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image">
+                        <img class="product-img" data-img-key="product1-image" alt="">
+                        <span class="product-badge" data-key="product1-badge">人气之选</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name" data-key="product1-name">小叶紫檀 108 颗</h3>
+                        <p class="product-desc" data-key="product1-desc">印度老料小叶紫檀，木质细腻，金星点点，油性充足。108 颗念珠，助您持诵佛号，静心安神。</p>
+                        <div class="product-meta">
+                            <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product1-price">1,280</span></span>
+                            <button class="product-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img class="product-img" data-img-key="product2-image" alt="">
+                        <span class="product-badge" data-key="product2-badge">收藏级</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name" data-key="product2-name">海南黄花梨手串</h3>
+                        <p class="product-desc" data-key="product2-desc">纹理如行云流水，色泽温润如玉。海南黄花梨，木中黄金，佩戴把玩，香气幽幽，历久弥珍。</p>
+                        <div class="product-meta">
+                            <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product2-price">2,680</span></span>
+                            <button class="product-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img class="product-img" data-img-key="product3-image" alt="">
+                        <span class="product-badge" data-key="product3-badge">新品</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name" data-key="product3-name">星月菩提 正月</h3>
+                        <p class="product-desc" data-key="product3-desc">高密度星月菩提，月朗星稀，油性足、瓷度高。盘玩后包浆浑厚，色泽古朴，是修行者的首选。</p>
+                        <div class="product-meta">
+                            <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product3-price">388</span></span>
+                            <button class="product-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img class="product-img" data-img-key="product4-image" alt="">
+                        <span class="product-badge" data-key="product4-badge">臻选</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name" data-key="product4-name">沉香念珠</h3>
+                        <p class="product-desc" data-key="product4-desc">天然沉香，香气清雅绵长。沉香通三界，闻之令人身心俱静，是礼佛、品茗、冥想的绝佳伴侣。</p>
+                        <div class="product-meta">
+                            <span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product4-price">3,580</span></span>
+                            <button class="product-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-image">
+                    <div class="about-image-main">
+                        <img src="logo/logo.png" alt="乐藏品牌印章">
+                    </div>
+                </div>
+                <div class="about-text">
+                    <h2 data-key="about-title">关于乐藏</h2>
+                    <p data-key="about-p1">乐藏，取自“以乐为藏，藏心于珠”。我们相信，每一颗佛珠都是一座小小的禅堂，手指轻拨之间，便能与内心深处的宁静相遇。</p>
+                    <p data-key="about-p2">自创立以来，乐藏始终坚持“真材、精工、诚心”三字准则。我们深入原产地甄选珍材，与资深工匠合作，以传统技艺结合现代审美，为您打造兼具修行价值与收藏意义的佛珠佳品。</p>
+                    <p data-key="about-p3">无论您是佛门信众、文玩藏家，还是寻求内心安宁的都市行者，乐藏都愿以一串好珠，陪伴您的每一次呼吸与念颂。</p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <div class="feature-icon" data-key="feature1-icon">真</div>
+                            <div class="feature-text">
+                                <h4 data-key="feature1-title">真材实料</h4>
+                                <p data-key="feature1-desc">源头直采，杜绝以次充好，每一颗珠子皆可溯源。</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <div class="feature-icon" data-key="feature2-icon">工</div>
+                            <div class="feature-text">
+                                <h4 data-key="feature2-title">匠心工艺</h4>
+                                <p data-key="feature2-desc">数十道工序精细打磨，孔道端正，珠形圆润。</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <div class="feature-icon" data-key="feature3-icon">诚</div>
+                            <div class="feature-text">
+                                <h4 data-key="feature3-title">诚信经营</h4>
+                                <p data-key="feature3-desc">明码标价，如实描述，支持七天无理由退换。</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <div class="feature-icon" data-key="feature4-icon">养</div>
+                            <div class="feature-text">
+                                <h4 data-key="feature4-title">终身养护</h4>
+                                <p data-key="feature4-desc">免费提供穿珠、换绳、保养等售后服务。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section class="why-us" id="why">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag" data-key="why-tag">WHY LEZANG</span>
+                <h2 class="section-title" data-key="why-title">甄选之道</h2>
+                <div class="section-line"></div>
+                <p class="section-desc" data-key="why-desc">乐藏不仅售卖佛珠，更传递一种生活方式——在纷繁世界中，守住内心的清净与庄严。</p>
+            </div>
+            <div class="why-grid">
+                <div class="why-card">
+                    <div class="why-icon" data-key="why1-icon">🌿</div>
+                    <h3 data-key="why1-title">天然珍材</h3>
+                    <p data-key="why1-desc">严选全球优质产区原木，拒绝染色、注油、做假，保留木材最本真的色泽与香气。</p>
+                </div>
+                <div class="why-card">
+                    <div class="why-icon" data-key="why2-icon">🔍</div>
+                    <h3 data-key="why2-title">严选品控</h3>
+                    <p data-key="why2-desc">每串佛珠均经专业师傅多轮筛选，确保尺寸统一、纹理优美、无裂无补。</p>
+                </div>
+                <div class="why-card">
+                    <div class="why-icon" data-key="why3-icon">🙏</div>
+                    <h3 data-key="why3-title">禅意设计</h3>
+                    <p data-key="why3-desc">融合传统佛珠形制与现代佩戴美学，让佛珠既适合修行，也适合日常搭配。</p>
+                </div>
+                <div class="why-card">
+                    <div class="why-icon" data-key="why4-icon">📦</div>
+                    <h3 data-key="why4-title">贴心礼赠</h3>
+                    <p data-key="why4-desc">精美礼盒包装，附赠保养手册与备用绳，送礼自用两相宜。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="gallery" id="gallery">
+        <div class="gallery-grid">
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery1-image" alt=""><span data-key="gallery1">禅意静物</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery2-image" alt=""><span data-key="gallery2">手工打磨</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery3-image" alt=""><span data-key="gallery3">品茗伴读</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery4-image" alt=""><span data-key="gallery4">佛堂供养</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery5-image" alt=""><span data-key="gallery5">礼盒包装</span></div>
+            <div class="gallery-item"><img class="gallery-img" data-img-key="gallery6-image" alt=""><span data-key="gallery6">顾客还图</span></div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag" data-key="contact-tag">CONTACT US</span>
+                <h2 class="section-title" data-key="contact-title">联系我们</h2>
+                <div class="section-line"></div>
+                <p class="section-desc" data-key="contact-desc">无论您想咨询定制、了解养护，还是仅仅想聊聊佛珠，乐藏都随时恭候。</p>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3 data-key="contact-subtitle">乐藏佛珠 · 静候您的到来</h3>
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-text">
+                            <h4 data-key="contact-address-title">实体店地址</h4>
+                            <p data-key="contact-address">中国浙江省杭州市西湖区灵隐路 88 号</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-text">
+                            <h4 data-key="contact-phone-title">咨询热线</h4>
+                            <p data-key="contact-phone">400-888-1234</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">💬</div>
+                        <div class="contact-text">
+                            <h4 data-key="contact-wechat-title">微信客服</h4>
+                            <p data-key="contact-wechat">LeZang_Beads</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">✉️</div>
+                        <div class="contact-text">
+                            <h4 data-key="contact-email-title">电子邮箱</h4>
+                            <p data-key="contact-email">hello@lecang.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">🕒</div>
+                        <div class="contact-text">
+                            <h4 data-key="contact-hours-title">营业时间</h4>
+                            <p data-key="contact-hours">每日 09:00 - 21:00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <div class="form-success" id="formSuccess">
+                        ✓ 感谢您的留言！乐藏客服会尽快与您联系。
+                    </div>
+                    <form onsubmit="handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="name">您的姓名 <span style="color:var(--light-red);">*</span></label>
+                            <input type="text" id="name" name="name" placeholder="请输入您的姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">联系电话 <span style="color:var(--light-red);">*</span></label>
+                            <input type="tel" id="phone" name="phone" placeholder="请输入您的手机号码" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wechat">微信号</label>
+                            <input type="text" id="wechat" name="wechat" placeholder="选填，方便微信沟通">
+                        </div>
+                        <div class="form-group">
+                            <label for="product">意向产品</label>
+                            <input type="text" id="product" name="product" placeholder="选填，如：小叶紫檀108颗">
+                        </div>
+                        <div class="form-group">
+                            <label for="message">咨询内容</label>
+                            <textarea id="message" name="message" placeholder="请告诉我们您的需求，如佛珠材质、尺寸、预算等"></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn" id="submitBtn">提交咨询</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <img src="logo/logo.png" alt="乐藏" class="footer-logo">
+        <div class="footer-links">
+            <a href="#products">精品佛珠</a>
+            <a href="#about">关于乐藏</a>
+            <a href="#why">甄选之道</a>
+            <a href="#contact">联系我们</a>
+        </div>
+        <p class="footer-copy" data-key="footer-copy">© 2026 乐藏佛珠 LeZang Beads. 保留所有权利。</p>
+    </footer>
+
+    <div class="server-badge" id="serverBadge">
+        <span class="dot"></span> 本地存储
+    </div>
+
+    <script src="cloud-sync.js"></script>
+    <script>
+        // ===== API helpers =====
+        const API_BASE = '';
+        let serverOnline = false;
+
+        async function apiGet(path) {
+            try {
+                const res = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function apiPost(path, data) {
+            try {
+                const res = await fetch(API_BASE + path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    signal: AbortSignal.timeout(8000)
+                });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function checkServerStatus() {
+            const result = await apiGet('/api/status');
+            const badge = document.getElementById('serverBadge');
+            if (result && result.online) {
+                serverOnline = true;
+                badge.classList.add('show');
+                if (CloudSync.isConfigured()) {
+                    badge.innerHTML = '<span class="dot"></span> 服务器+云端';
+                } else {
+                    badge.innerHTML = '<span class="dot"></span> 本地存储';
+                }
+            } else if (CloudSync.isConfigured()) {
+                badge.classList.add('show');
+                badge.innerHTML = '<span class="dot"></span> 云端同步';
+            }
+        }
+
+        // Apply content data to DOM (reads from backend/cloud sync)
+        function applyContent(data) {
+            if (!data) return;
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (data[key] !== undefined && data[key] !== '') {
+                    el.innerHTML = data[key];
+                }
+            });
+            // Load images
+            document.querySelectorAll('[data-img-key]').forEach(img => {
+                const key = img.dataset.imgKey;
+                if (data[key]) {
+                    img.src = data[key];
+                    img.parentElement.classList.add('has-image');
+                }
+            });
+        }
+
+        // Load saved content: cloud first (if configured), then server API, fallback to localStorage
+        async function loadSavedContent() {
+            // Try cloud sync first (if configured) — ensures cross-device consistency
+            if (CloudSync.isConfigured()) {
+                const cloudData = await CloudSync.readContent();
+                if (cloudData && Object.keys(cloudData).length > 0) {
+                    applyContent(cloudData);
+                    localStorage.setItem('lecang_content', JSON.stringify(cloudData));
+                    return;
+                }
+            }
+            // Try server API
+            const result = await apiGet('/api/content');
+            if (result && result.success && result.data && Object.keys(result.data).length > 0) {
+                applyContent(result.data);
+                localStorage.setItem('lecang_content', JSON.stringify(result.data));
+                return;
+            }
+            // Fallback to localStorage
+            const saved = localStorage.getItem('lecang_content');
+            if (saved) {
+                applyContent(JSON.parse(saved));
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('formSuccess');
+
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                wechat: document.getElementById('wechat').value,
+                product: document.getElementById('product').value,
+                message: document.getElementById('message').value
+            };
+
+            btn.disabled = true;
+            btn.textContent = '正在提交...';
+
+            const result = await apiPost('/api/submit', formData);
+
+            btn.disabled = false;
+            btn.textContent = '提交咨询';
+
+            if (result && result.success) {
+                successMsg.classList.add('show');
+                e.target.reset();
+                setTimeout(() => successMsg.classList.remove('show'), 5000);
+                // 同时上传到云端（如果已配置），确保其他设备能看到
+                if (CloudSync.isConfigured()) {
+                    const now = new Date();
+                    const pad = n => String(n).padStart(2, '0');
+                    const submission = {
+                        ...formData,
+                        time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
+                        timestamp: now.getTime()
+                    };
+                    CloudSync.addSubmission(submission);
+                }
+            } else {
+                // Fallback: save to localStorage and cloud sync
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const submission = {
+                    ...formData,
+                    time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
+                    timestamp: now.getTime()
+                };
+                // Save locally
+                CloudSync.addSubmissionLocal(submission);
+                // Save to cloud if configured
+                if (CloudSync.isConfigured()) {
+                    CloudSync.addSubmission(submission);
+                }
+                successMsg.classList.add('show');
+                e.target.reset();
+                setTimeout(() => successMsg.classList.remove('show'), 5000);
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkServerStatus();
+            await loadSavedContent();
+        });
+    </script>
+</body>
+</html>
