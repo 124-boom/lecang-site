@@ -1,6 +1,6 @@
 {
   "content": {
-    "nav-logo": "乐藏",
+    "nav-logo": "莆田乐藏工艺品有限责任公司",
     "currency-symbol": "¥",
     "hero-title": "乐藏",
     "hero-subtitle": "一串佛珠，一念清净",
@@ -78,15 +78,20 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783414481152,
-    "gallery1-image": "./data/uploads/gallery1.png",
+    "updatedAt": 1783431086899,
+    "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.png",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
     "gallery3-watermark": "心",
     "gallery4-watermark": "念",
     "gallery5-watermark": "慧",
-    "gallery6-watermark": "悟"
+    "gallery6-watermark": "悟",
+    "gallery2-image": "/data/uploads/gallery2-1783432421333-ovwuov.png",
+    "gallery3-image": "/data/uploads/ai-image__2__png-1783431668810-zl0yby.png",
+    "gallery4-image": "/data/uploads/ai-image__9__png-1783431672831-g259ne.png",
+    "gallery5-image": "/data/uploads/压缩ai-image__7__png-1783431689541-tti41h.png",
+    "gallery6-image": "/data/uploads/ai-image__1__png-1783431695105-qpqalz.png"
   },
   "submissions": [],
-  "updatedAt": 1783423160780
+  "updatedAt": 1783434294964
 }
