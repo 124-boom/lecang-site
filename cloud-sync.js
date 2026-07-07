@@ -376,31 +376,48 @@ const CloudSync = {
         const d = this._safeRaw(await this.readGitHubRaw());
         return (d && Array.isArray(d.submissions)) ? d.submissions : [];
     },
+    // 写入候选地址：优先用户配置的代理；未配置时直连 api.github.com，失败再走公共镜像
+    _ghWriteCandidates() {
+        const api = 'https://api.github.com/repos/' + (this.config.github.repo || '') + '/contents/' + (this.config.github.path || 'data/cloud-data.json');
+        const cfgProxy = (this.config.github.proxy || '').trim().replace(/\/+$/, '');
+        if (cfgProxy) return [cfgProxy + '/' + api];
+        return [api, 'https://ghproxy.net/' + api, 'https://gh.api.99988866.xyz/' + api];
+    },
     async writeGitHub(payload) {
         const g = this.config.github;
         if (!g.token) return { success: false, error: 'GitHub 写入需要 Token（在云端设置中填写）' };
-        // 取当前文件 SHA（不存在则为新建）
-        let sha = null;
-        try {
-            const r = await fetch(this._ghApiUrl(), { headers: this._ghHeaders() });
-            if (r.ok) { const j = await r.json(); sha = j.sha || null; }
-        } catch (e) {}
-        const body = JSON.stringify(payload, null, 2);
-        const r = await fetch(this._ghApiUrl(), {
-            method: 'PUT',
-            headers: this._ghHeaders(),
-            body: JSON.stringify({
-                message: '更新乐藏云端数据 ' + new Date().toISOString(),
-                content: this._b64encode(body),
-                sha: sha || undefined
-            })
-        });
-        if (!r.ok) {
-            let msg = '';
-            try { msg = (await r.json()).message || ''; } catch (e) {}
-            return { success: false, error: 'GitHub 写入失败 ' + r.status + (msg ? '：' + msg : '') };
+        const encoded = this._b64encode(JSON.stringify(payload, null, 2));
+        let lastErr = '';
+        for (const url of this._ghWriteCandidates()) {
+            try {
+                // 取当前文件 SHA（不存在则为新建）
+                let sha = null;
+                try {
+                    const r0 = await fetch(url, { headers: this._ghHeaders(), signal: AbortSignal.timeout(15000) });
+                    if (r0.ok) { const j = await r0.json(); sha = j.sha || null; }
+                } catch (e) {}
+                const r = await fetch(url, {
+                    method: 'PUT',
+                    headers: this._ghHeaders(),
+                    body: JSON.stringify({
+                        message: '更新乐藏云端数据 ' + new Date().toISOString(),
+                        content: encoded,
+                        sha: sha || undefined
+                    }),
+                    signal: AbortSignal.timeout(20000)
+                });
+                if (r.ok) return { success: true };
+                let msg = '';
+                try { msg = (await r.json()).message || ''; } catch (e) {}
+                if (r.status === 401 || r.status === 403) {
+                    return { success: false, error: 'GitHub 写入失败 ' + r.status + '：Token 无写入权限（需 repo 权限或细粒度 Contents:Write）' + (msg ? ' ' + msg : '') };
+                }
+                lastErr = 'GitHub 写入失败 ' + r.status + (msg ? '：' + msg : '');
+            } catch (e) {
+                lastErr = 'GitHub 网络错误：' + e.message + '（已尝试代理/镜像仍失败，可手动在「云端设置→GitHub」填写可用的代理地址）';
+            }
         }
-        return { success: true };
+        return { success: false, error: lastErr };
     },
     async writeGitHubContent(c) {
         const d = this._safeRaw(await this.readGitHubRaw());

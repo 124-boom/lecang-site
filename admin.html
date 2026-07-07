@@ -1588,23 +1588,21 @@
             }
 
             // Sync to cloud (if configured)
+            const cloudConfigured = CloudSync.isConfigured() || CloudSync.hasCloud();
+            let cloudErr = '';
             if (CloudSync.getMode() === 'github') {
                 const w = await CloudSync.writeContent(htmlData);
-                if (!w.success) {
-                    showToast('已保存到本机，但同步 GitHub 失败：' + (w.error || ''), 'error');
-                }
+                if (!w.success) cloudErr = '同步 GitHub 失败：' + (w.error || '');
             } else if (CloudSync.hasCloud()) {
                 const r = await CloudSync.syncBidirectional('up');
-                if (!r.success) {
-                    showToast('已保存到本机，但同步云端失败：' + (r.error || ''), 'error');
-                }
+                if (!r.success) cloudErr = '同步云端失败：' + (r.error || '');
             }
 
             // 提交记录（客户咨询）也要随“保存”固化：以本地为准全量写回本机+云端。
             // 注意：不能用 syncBidirectional 的“并集合并”，否则云端未删的那条会被合并回来导致“删了还在”。
             const sr = await persistSubmissions();
             if (!sr.success) {
-                showToast('内容已保存，但提交记录同步云端失败：' + (sr.error || ''), 'error');
+                cloudErr = (cloudErr ? cloudErr + '；' : '') + '提交记录同步云端失败：' + (sr.error || '');
             }
 
             // ===== Record to history =====
@@ -1639,7 +1637,9 @@
             renderHistory();
             updateDataSummary();
             if (CloudSync.isConfigured()) updateCloudUI();
-            showToast('内容已保存，提交记录已同步', 'success');
+            if (cloudErr) showToast('已保存到本机，但' + cloudErr, 'error');
+            else if (cloudConfigured) showToast('内容已保存，已同步云端 ✓', 'success');
+            else showToast('内容已保存（仅本机，未配置云端）', 'success');
         }
 
         // ===== Reset =====
