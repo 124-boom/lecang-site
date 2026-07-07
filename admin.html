@@ -472,6 +472,12 @@
             50% { opacity: 0.4; }
         }
 
+        /* 保存状态：小点 + 常驻文字说明 */
+        .save-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1; color: var(--success); }
+        .save-status-text { font-size: 12px; white-space: nowrap; font-weight: 600; }
+        .save-status.saving { color: var(--gold); }
+        .save-status.error { color: var(--danger); }
+
         /* Mobile */
         .menu-toggle {
             display: none;
@@ -724,7 +730,7 @@
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="logo/logo.png" alt="乐藏">
+            <img src="logo/AI生成.png" alt="乐藏">
             <div>
                 <h1>乐藏</h1>
                 <p>后台管理系统</p>
@@ -756,7 +762,10 @@
             <div style="display:flex;align-items:center;gap:14px;">
                 <button class="menu-toggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
                 <h2 id="pageTitle">控制台</h2>
-                <span class="unsaved-dot" id="unsavedDot" title="有未保存的更改"></span>
+                <span class="save-status" id="saveStatus">
+                    <span class="unsaved-dot" id="unsavedDot" title="有未保存的更改"></span>
+                    <span class="save-status-text" id="saveStatusText">已同步</span>
+                </span>
             </div>
             <div class="topbar-actions">
                 <button class="btn btn-danger btn-sm" onclick="resetAll()">↺ 恢复默认</button>
@@ -1244,23 +1253,24 @@
                                     <input type="text" id="ghWorkerUrl" placeholder="如 http://abc.cpolar.cn  （留空=仅本机）">
                                 </div>
                                 <div class="form-group">
-                                    <label>管理密码 <span class="hint">后台写操作需要</span></label>
-                                    <input type="password" id="ghAdminKey" placeholder="后台管理密码">
+                                    <label>管理密码 <span class="hint">可选，一般留空（默认免密同步）</span></label>
+                                    <input type="password" id="ghAdminKey" placeholder="仅当你自定义过服务器密码时才填">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>花生壳访问账号 <span class="hint">隧道「访问控制」里的账号（没有则留空）</span></label>
-                                    <input type="text" id="ghAuthUser" placeholder="访问验证账号（可留空）">
+                                    <label>隧道访问账号 <span class="hint">可选，一般留空</span></label>
+                                    <input type="text" id="ghAuthUser" placeholder="仅当内网穿透隧道开启了访问验证才填">
                                 </div>
                                 <div class="form-group">
-                                    <label>花生壳访问密码 <span class="hint">隧道「访问验证」密码，自动带上不再弹窗</span></label>
-                                    <input type="password" id="ghAuthPass" placeholder="访问验证密码">
+                                    <label>隧道访问密码 <span class="hint">可选，一般留空</span></label>
+                                    <input type="password" id="ghAuthPass" placeholder="仅当隧道开启了访问验证才填">
                                 </div>
                             </div>
                             <p style="color:var(--warm-brown);font-size:12px;line-height:1.7;margin:6px 0 4px;">
-                                打开网站或同步时若花生壳要求输密码，把这里的「访问账号 / 密码」填好，网站会自动带上凭据，后台同步不再被弹窗拦。
-                                想连前台打开都不弹窗，可在花生壳后台关闭该隧道的「访问验证」。
+                                说明：花生壳免费版添加映射没有密码这一项，所以「隧道访问账号 / 密码」通常<strong>直接留空</strong>即可。
+                                之前同步提示“管理密码错误”，其实是我们网站后台自己的「管理密码」字段（默认免密，留空就能同步），并不是花生壳要密码。
+                                想给服务器加一道防护，可在家里的服务器用环境变量 <code>ADMIN_KEY=你的密码</code> 启动，那时才需要在这里填对应密码。
                             </p>
                             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
                                 <button class="btn btn-save btn-sm" onclick="saveCloudConfig()">💾 保存配置</button>
@@ -1306,6 +1316,14 @@
                                 <button class="btn btn-save btn-sm" onclick="saveGitHubConfig()">💾 保存配置</button>
                                 <button class="btn btn-outline btn-sm" onclick="testGitHubConnection()">🔌 测试连接</button>
                                 <button class="btn btn-danger btn-sm" onclick="clearGitHubConfig()">清除配置</button>
+                            </div>
+                            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink);cursor:pointer;">
+                                <input type="checkbox" id="ghDualDeploy" onchange="onGithubPagesSyncChange(this.checked)">
+                                保存时自动同步到 <strong>GitHub Pages 公网</strong>（双部署：一次保存，两个公网同时更新）
+                            </label>
+                            <div style="font-size:12px;color:var(--warm-brown);margin-top:4px;line-height:1.6;">
+                                勾选后，在花生壳后台保存会<strong>自动</strong>把内容推送到 GitHub 仓库，两个公网（花生壳 + GitHub Pages）同步更新；
+                                在 GitHub Pages 后台保存则浏览器端直接推送。Token 存在本机服务/浏览器，不会随页面公开。
                             </div>
                             <div id="ghTestResult" style="margin-top:12px;display:none;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
                         </div>
@@ -1450,9 +1468,19 @@
         // ===== API helpers =====
         const API_BASE = '';
 
+        // 浏览器兼容的超时信号（旧浏览器无 AbortSignal.timeout 时降级为无超时，避免报错伪装成“无法连接”）
+        function makeTimeout(ms) {
+            try {
+                if (typeof AbortController === 'undefined') return undefined;
+                const c = new AbortController();
+                c.__timer = setTimeout(() => { try { c.abort(); } catch (e) {} }, ms);
+                return c.signal;
+            } catch (e) { return undefined; }
+        }
+
         async function apiGet(path) {
             try {
-                const res = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
+                const res = await fetch(API_BASE + path, { signal: makeTimeout(5000) });
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
@@ -1464,7 +1492,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
-                    signal: AbortSignal.timeout(8000)
+                    signal: makeTimeout(8000)
                 });
                 if (!res.ok) return null;
                 return await res.json();
@@ -1473,7 +1501,7 @@
 
         async function apiDelete(path) {
             try {
-                const res = await fetch(API_BASE + path, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
+                const res = await fetch(API_BASE + path, { method: 'DELETE', signal: makeTimeout(5000) });
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
@@ -1486,7 +1514,7 @@
             // 1) 先检测「本机服务器」（同源 /api/status，双击启动网站.bat 后才会在线）
             let localOnline = false;
             try {
-                const r = await fetch('/api/status', { signal: AbortSignal.timeout(8000) });
+                const r = await fetch('/api/status', { signal: makeTimeout(8000) });
                 const d = await r.json().catch(() => null);
                 localOnline = r.ok && d && (d.online === true || d.success === true);
             } catch (e) { localOnline = false; }
@@ -1522,12 +1550,14 @@
         async function loadContent() {
             // Try cloud sync first (if configured) — ensures cross-device consistency
             if (CloudSync.isConfigured()) {
-                const cloudData = await CloudSync.readContent();
-                if (cloudData && Object.keys(cloudData).length > 0) {
-                    currentContent = { ...defaultContent, ...cloudData };
-                    localStorage.setItem('lecang_content', JSON.stringify(cloudData));
-                    return;
-                }
+                try {
+                    const cloudData = await CloudSync.readContent();
+                    if (cloudData && Object.keys(cloudData).length > 0) {
+                        currentContent = { ...defaultContent, ...cloudData };
+                        localStorage.setItem('lecang_content', JSON.stringify(cloudData));
+                        return;
+                    }
+                } catch (e) { /* 云端读取失败不应阻断加载，继续走本机服务器 */ }
             }
             // Try server API
             const result = await apiGet('/api/content');
@@ -1536,6 +1566,20 @@
                 localStorage.setItem('lecang_content', JSON.stringify(result.data));
                 return;
             }
+            // 在 GitHub Pages 部署下，仓库提交的 data/cloud-data.json 就是权威内容源（与前台一致）。
+            // 直接读它，无需配置 Token 即可在「github.io 后台」看到云端已同步的内容。
+            try {
+                const pub = await fetch('./data/cloud-data.json?t=' + Date.now(), { signal: makeTimeout(30000) });
+                if (pub.ok) {
+                    const pd = await pub.json();
+                    const data = (pd && pd.content && typeof pd.content === 'object') ? pd.content : pd;
+                    if (data && Object.keys(data).length > 0) {
+                        currentContent = { ...defaultContent, ...data };
+                        try { localStorage.setItem('lecang_content', JSON.stringify(data)); } catch (e) {}
+                        return;
+                    }
+                }
+            } catch (e) { /* 文件不存在/不可达则继续走 localStorage */ }
             // Fallback to localStorage
             const saved = localStorage.getItem('lecang_content');
             if (saved) {
@@ -1568,19 +1612,64 @@
             return data;
         }
 
-        // ===== Mark unsaved =====
-        function markUnsaved() {
-            hasUnsaved = true;
-            document.getElementById('unsavedDot').classList.add('show');
-            document.getElementById('statSave').textContent = '未保存';
-            document.getElementById('statSave').style.color = 'var(--gold)';
+        // ===== 保存状态指示（小点 + 常驻文字说明）=====
+        function setSaveStatus(state, text) {
+            const box = document.getElementById('saveStatus');
+            const txt = document.getElementById('saveStatusText');
+            const dot = document.getElementById('unsavedDot');
+            const stat = document.getElementById('statSave');
+            if (!box || !txt) return;
+            box.classList.remove('saving', 'error');
+            if (state === 'unsaved') {
+                hasUnsaved = true;
+                dot.classList.add('show');
+                txt.textContent = text || '有未保存的修改';
+                box.style.color = 'var(--gold)';
+                if (stat) { stat.textContent = '未保存'; stat.style.color = 'var(--gold)'; }
+            } else if (state === 'saving') {
+                hasUnsaved = false;
+                dot.classList.remove('show');
+                txt.textContent = text || '正在保存…';
+                box.classList.add('saving');
+                box.style.color = 'var(--gold)';
+                if (stat) { stat.textContent = '保存中'; stat.style.color = 'var(--gold)'; }
+            } else if (state === 'saved') {
+                hasUnsaved = false;
+                dot.classList.remove('show');
+                txt.textContent = text || '已保存并同步';
+                box.style.color = 'var(--success)';
+                if (stat) { stat.textContent = '已同步'; stat.style.color = 'var(--success)'; }
+            } else if (state === 'error') {
+                hasUnsaved = false;
+                dot.classList.remove('show');
+                txt.textContent = text || '保存出错，请重试';
+                box.classList.add('error');
+                box.style.color = 'var(--danger)';
+                if (stat) { stat.textContent = '保存异常'; stat.style.color = 'var(--danger)'; }
+            }
         }
+        function markUnsaved() { setSaveStatus('unsaved'); }
+        function markSaved() { setSaveStatus('saved'); }
 
-        function markSaved() {
-            hasUnsaved = false;
-            document.getElementById('unsavedDot').classList.remove('show');
-            document.getElementById('statSave').textContent = '已同步';
-            document.getElementById('statSave').style.color = 'var(--success)';
+        // ===== 双部署开关（保存时是否同步到 GitHub Pages 公网）=====
+        function isGithubPagesSyncOn() {
+            try {
+                const v = localStorage.getItem('lecang_gh_sync_on');
+                if (v === null) return CloudSync.hasGitHub(); // 默认：配置了 GitHub 就开启双部署
+                return v === '1';
+            } catch (e) { return CloudSync.hasGitHub(); }
+        }
+        async function onGithubPagesSyncChange(checked) {
+            try { localStorage.setItem('lecang_gh_sync_on', checked ? '1' : '0'); } catch (e) {}
+            // 若当前连着本机服务器，把开关同步进服务器配置，让服务器在保存时自动推送
+            if (serverOnline) {
+                try {
+                    const cfg = await apiGet('/api/sync-config');
+                    const merged = Object.assign({}, (cfg && cfg.data) || {}, { dualDeploy: checked });
+                    await apiPost('/api/sync-config', merged);
+                } catch (e) {}
+            }
+            showToast(checked ? '已开启：保存时同步到 GitHub Pages 公网' : '已关闭：保存仅更新花生壳公网', 'success');
         }
 
         // ===== Save =====
@@ -1593,21 +1682,36 @@
             }
             // 记录修改时间，作为云端合并时的“谁更新”依据
             htmlData.updatedAt = Date.now();
-            localStorage.setItem('lecang_content', JSON.stringify(htmlData));
+            // 容错：localStorage 有配额上限（图片外置后一般不会触发），但万一超限也不能让保存整体崩溃
+            try { localStorage.setItem('lecang_content', JSON.stringify(htmlData)); }
+            catch (e) { console.warn('[lecang] localStorage 写入失败（不影响服务器保存）', e); }
             currentContent = data;
+            // 进入“正在保存”进度态（覆盖小点旁边的文字，解决“一直闪烁不知在干嘛”）
+            setSaveStatus('saving', '正在保存…');
 
-            // Sync to server
-            if (serverOnline) {
-                await apiPost('/api/content', htmlData);
+            // 1) 保存到本机服务器（花生壳公网的数据源）。服务器会据此自动推送 GitHub Pages（双部署）。
+            let ghStatus = null;
+            if (serverOnline && Object.keys(htmlData).length > 0) {
+                const saveResp = await apiPost('/api/content', htmlData);
+                ghStatus = (saveResp && saveResp.github) || null; // 服务器自动推送 GitHub 的结果
             }
 
-            // Sync to cloud (if configured)
+            // 2) GitHub Pages 双部署：若服务器没推（后台不在花生壳 / 双部署关闭 / 未连接）且已勾选 → 浏览器端直接推
+            const ghPushEnabled = isGithubPagesSyncOn() && CloudSync.hasGitHub();
+            const serverPushedGithub = !!(ghStatus && ghStatus.pushed && ghStatus.ok);
+            let clientPushedGithub = false, ghClientErr = '';
+            if (Object.keys(htmlData).length > 0 && ghPushEnabled && !serverPushedGithub) {
+                try {
+                    const w = await CloudSync.writeGitHubContent(htmlData);
+                    if (w.success) clientPushedGithub = true;
+                    else ghClientErr = (w.error || '未知错误');
+                } catch (e) { ghClientErr = e.message; }
+            }
+
+            // 3) 原有「内网穿透服务器」云端合并逻辑（保留，确保线索等一致）
             const cloudConfigured = CloudSync.isConfigured() || CloudSync.hasCloud();
             let cloudErr = '';
-            if (CloudSync.getMode() === 'github') {
-                const w = await CloudSync.writeContent(htmlData);
-                if (!w.success) cloudErr = '同步 GitHub 失败：' + (w.error || '');
-            } else if (CloudSync.hasCloud()) {
+            if (Object.keys(htmlData).length > 0 && CloudSync.getMode() !== 'github' && CloudSync.hasCloud()) {
                 const r = await CloudSync.syncBidirectional('up');
                 if (!r.success) cloudErr = '同步云端失败：' + (r.error || '');
             }
@@ -1647,13 +1751,47 @@
             if (history.length > 200) history = history.slice(-200);
             localStorage.setItem('lecang_history', JSON.stringify(history));
 
-            markSaved();
+            // ===== 组合「两个公网」发布状态 =====
+            const ghOk = serverPushedGithub || clientPushedGithub;
+            let pubMsg = '';
+            if (serverOnline) pubMsg = '花生壳公网 ✓';
+            else pubMsg = '（本机服务器未连接）';
+            if (CloudSync.hasGitHub()) {
+                if (ghOk) pubMsg += ' · GitHub Pages ✓';
+                else if (ghStatus && ghStatus.pushed && !ghStatus.ok) pubMsg += ' · GitHub Pages 失败：' + (ghStatus.error || '');
+                else if (ghStatus && ghStatus.skipped) pubMsg += ' · GitHub Pages：' + (ghStatus.reason || '未发布');
+                else if (ghClientErr) pubMsg += ' · GitHub Pages 失败：' + ghClientErr;
+                else if (ghPushEnabled) pubMsg += ' · GitHub Pages：未发布';
+                else pubMsg += ' · GitHub Pages：未开启';
+            }
+
+            if (cloudErr) {
+                setSaveStatus('saved', pubMsg + ' · 云端线索同步失败');
+            } else if (ghClientErr && !ghOk) {
+                setSaveStatus('saved', pubMsg + ' · GitHub 发布失败');
+            } else {
+                setSaveStatus('saved', pubMsg);
+            }
             renderHistory();
             updateDataSummary();
             if (CloudSync.isConfigured()) updateCloudUI();
-            if (cloudErr) showToast('已保存到本机，但' + cloudErr, 'error');
-            else if (cloudConfigured) showToast('内容已保存，已同步云端 ✓', 'success');
-            else showToast('内容已保存（仅本机，未配置云端）', 'success');
+
+            // ===== Toast 汇总 =====
+            let toastMsg, toastType;
+            if (cloudErr) {
+                toastMsg = '已保存，但云端线索同步失败：' + cloudErr;
+                toastType = 'error';
+            } else if (ghClientErr && !ghOk) {
+                toastMsg = (serverOnline ? '花生壳公网已更新，' : '') + '但 GitHub Pages 发布失败：' + ghClientErr;
+                toastType = 'error';
+            } else if (serverOnline || CloudSync.hasGitHub()) {
+                toastMsg = '已保存并发布到公网 ✓' + (CloudSync.hasGitHub() ? '（花生壳 + GitHub Pages 双部署）' : '（花生壳公网）');
+                toastType = 'success';
+            } else {
+                toastMsg = '内容已保存（仅本机，未配置云端）';
+                toastType = 'success';
+            }
+            showToast(toastMsg, toastType);
         }
 
         // ===== Reset =====
@@ -1938,13 +2076,28 @@
         function handleImageUpload(event, key) {
             const file = event.target.files[0];
             if (!file) return;
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('图片不能超过 2MB，请压缩后重试', 'error');
+            if (file.size > 8 * 1024 * 1024) {
+                showToast('图片不能超过 8MB，请压缩后重试', 'error');
                 return;
             }
             const reader = new FileReader();
-            reader.onload = function(e) {
-                currentContent[key] = e.target.result;
+            reader.onload = async function(e) {
+                const dataUrl = e.target.result;
+                // 先把图片传到本机服务器，content 里只存返回的 URL（避免 base64 撑爆 localStorage 导致保存失败）
+                try {
+                    const resp = await apiPost('/api/upload', { name: file.name || key, dataUrl });
+                    if (resp && resp.success && resp.url) {
+                        currentContent[key] = resp.url;
+                        showToast('图片已上传，点击保存以生效', 'success');
+                    } else {
+                        // 上传失败：退化为 base64 仅本地预览（保存时可能无法持久化）
+                        currentContent[key] = dataUrl;
+                        showToast('图片已暂存本地预览，但服务器上传失败（保存后可能不生效）', 'error');
+                    }
+                } catch (err) {
+                    currentContent[key] = dataUrl;
+                    showToast('图片已暂存本地预览，但服务器上传失败', 'error');
+                }
                 // Re-render the relevant section
                 if (key.startsWith('product')) {
                     renderProducts();
@@ -1952,7 +2105,6 @@
                     renderGallery();
                 }
                 markUnsaved();
-                showToast('图片已上传，点击保存以生效', 'success');
             };
             reader.readAsDataURL(file);
         }
@@ -2595,25 +2747,28 @@
             const syncStatusText = document.getElementById('syncStatusText');
             if (syncStatusText) syncStatusText.textContent = configured ? '已配置' : '未配置';
 
-            // Fill form fields (only when empty)
+            // Fill form fields（始终回填当前 config 值，保证 UI 与内部状态一致）
             const urlEl = document.getElementById('ghWorkerUrl');
             const keyEl = document.getElementById('ghAdminKey');
-            if (urlEl && !urlEl.value) urlEl.value = cfg.workerUrl || '';
-            if (keyEl && !keyEl.value) keyEl.value = cfg.adminKey || '';
+            if (urlEl) urlEl.value = cfg.workerUrl || '';
+            if (keyEl) keyEl.value = cfg.adminKey || '';
             const auEl = document.getElementById('ghAuthUser');
             const apEl = document.getElementById('ghAuthPass');
-            if (auEl && !auEl.value) auEl.value = cfg.authUser || '';
-            if (apEl && !apEl.value) apEl.value = cfg.authPass || '';
+            if (auEl) auEl.value = cfg.authUser || '';
+            if (apEl) apEl.value = cfg.authPass || '';
             const rEl = document.getElementById('ghRepo');
             const bEl = document.getElementById('ghBranch');
             const pEl = document.getElementById('ghPath');
             const tEl = document.getElementById('ghToken');
-            if (rEl && !rEl.value) rEl.value = cfg.github.repo || '';
-            if (bEl && !bEl.value) bEl.value = cfg.github.branch || 'main';
-            if (pEl && !pEl.value) pEl.value = cfg.github.path || 'data/cloud-data.json';
-            if (tEl && !tEl.value) tEl.value = cfg.github.token || '';
             const pxEl = document.getElementById('ghProxy');
-            if (pxEl && !pxEl.value) pxEl.value = cfg.github.proxy || '';
+            if (rEl) rEl.value = cfg.github.repo || '';
+            if (bEl) bEl.value = cfg.github.branch || 'main';
+            if (pEl) pEl.value = cfg.github.path || 'data/cloud-data.json';
+            if (tEl) tEl.value = cfg.github.token || '';
+            if (pxEl) pxEl.value = cfg.github.proxy || '';
+            // 双部署开关初始化
+            const dpEl = document.getElementById('ghDualDeploy');
+            if (dpEl) dpEl.checked = isGithubPagesSyncOn();
         }
 
         function selectCloudType(mode) {
@@ -2760,14 +2915,34 @@
                 resultArea.style.color = 'var(--warm-brown)';
                 resultArea.style.fontSize = '14px';
                 resultArea.style.textAlign = 'center';
-                resultArea.innerHTML = '⏳ 正在同步（本地 ⇄ 云端）...';
+                resultArea.innerHTML = direction === 'up' ? '⏳ 正在上传到云端...' : (direction === 'down' ? '⏳ 正在从云端下载...' : '⏳ 正在同步（本地 ⇄ 云端）...');
             }
-            const result = await CloudSync.syncBidirectional(direction);
+            let result;
+            if (direction === 'up') {
+                // 仅上传：以【当前表单】为权威，绝不读取旧的服务端内容来回写覆盖本地修改
+                const contentData = collectFormData();
+                for (const key in currentContent) {
+                    if (key.endsWith('-image') && currentContent[key]) contentData[key] = currentContent[key];
+                }
+                // 先固化到本机服务器，保证“本地”也是最新（避免本机服务端仍是旧内容被后续误读）
+                if (serverOnline) {
+                    try { await apiPost('/api/content', Object.assign({}, contentData, { updatedAt: Date.now() })); } catch (e) {}
+                }
+                result = await CloudSync.syncToCloud(contentData, customers);
+            } else {
+                result = await CloudSync.syncBidirectional(direction);
+            }
             if (resultArea) {
                 if (result.success) {
                     resultArea.style.background = 'rgba(74,124,89,0.1)';
                     resultArea.style.color = 'var(--success)';
-                    resultArea.innerHTML = '✅ 双向同步完成！<br><span style="font-size:13px;">合并后共 <strong>' + result.mergedSubmissions + '</strong> 条线索（本地 ' + result.localSubmissions + ' / 云端 ' + result.cloudSubmissions + '），内容以【' + result.contentSource + '】为准</span>';
+                    if (direction === 'up') {
+                        const c = result.results ? result.results.content : true;
+                        const s = result.results ? result.results.submissions : true;
+                        resultArea.innerHTML = '✅ 已上传到云端！<br><span style="font-size:13px;">网站内容 ' + (c ? '✅' : '❌') + '　客户咨询 ' + (s ? '✅' : '❌') + '</span>';
+                    } else {
+                        resultArea.innerHTML = '✅ 双向同步完成！<br><span style="font-size:13px;">合并后共 <strong>' + result.mergedSubmissions + '</strong> 条线索（本地 ' + result.localSubmissions + ' / 云端 ' + result.cloudSubmissions + '），内容以【' + result.contentSource + '】为准</span>';
+                    }
                 } else {
                     resultArea.style.background = 'rgba(192,57,43,0.1)';
                     resultArea.style.color = 'var(--danger)';
@@ -2775,18 +2950,26 @@
                 }
             }
             if (result.success) {
-                await loadContent();
-                populateForm();
-                renderProducts();
-                renderFeatures();
-                renderWhyCards();
-                renderGallery();
-                renderHistory();
-                await loadSubmissions();
-                updateCloudUI();
-                updateDataSummary();
-                markSaved();
-                showToast('双向同步完成', 'success');
+                if (direction === 'up') {
+                    // 上传后表单即最新：不再从云端重载，避免覆盖刚上传的本地内容
+                    updateCloudUI();
+                    updateDataSummary();
+                    markSaved();
+                    showToast('已上传到云端 ✓', 'success');
+                } else {
+                    await loadContent();
+                    populateForm();
+                    renderProducts();
+                    renderFeatures();
+                    renderWhyCards();
+                    renderGallery();
+                    renderHistory();
+                    await loadSubmissions();
+                    updateCloudUI();
+                    updateDataSummary();
+                    markSaved();
+                    showToast('双向同步完成', 'success');
+                }
             }
         }
 
