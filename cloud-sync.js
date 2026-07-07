@@ -473,7 +473,10 @@ const CloudSync = {
         d.content = c || {};
         if (!Array.isArray(d.submissions)) d.submissions = [];
         d.updatedAt = Date.now();
-        return this.writeGitHub(d);
+        const r = await this.writeGitHub(d);
+        // 同时把最新内容内联进 index.html（消除首屏默认模板闪烁）
+        await this.writeGitHubIndex(c || {});
+        return r;
     },
     async writeGitHubSubs(s) {
         const d = this._safeRaw(await this.readGitHubRaw());
@@ -506,6 +509,46 @@ const CloudSync = {
         return this.writeGitHub(d);
     },
 
+    // 把最新内容内联进仓库的 index.html（仅在模板含 lecang-content-embed 标记时生效）
+    _ghIndexCandidates() {
+        const api = 'https://api.github.com/repos/' + (this.config.github.repo || '') + '/contents/index.html';
+        const cfgProxy = (this.config.github.proxy || '').trim().replace(/\/+$/, '');
+        if (cfgProxy) return [cfgProxy + '/' + api];
+        return [api, 'https://ghproxy.net/' + api, 'https://gh.api.99988866.xyz/' + api];
+    },
+    async writeGitHubIndex(content) {
+        const g = this.config.github;
+        if (!g.token) return { success: false };
+        let lastErr = '';
+        for (const url of this._ghIndexCandidates()) {
+            try {
+                let sha = null, cur = null;
+                try {
+                    const r0 = await fetch(url, { headers: this._ghHeaders(), signal: this._timeoutSignal(15000) });
+                    if (r0.ok) { const j = await r0.json(); sha = j.sha || null; cur = j.content || ''; }
+                } catch (e) {}
+                let html = cur ? this._b64decode(cur) : null;
+                if (html == null) {
+                    // 仓库暂无 index.html（极少），尝试取当前页作为模板
+                    try { const rr = await fetch('./index.html', { signal: this._timeoutSignal(15000) }); if (rr.ok) html = await rr.text(); } catch (e) {}
+                }
+                if (html == null || html.indexOf('lecang-content-embed') === -1) return { success: true };
+                const injected = html.replace(/<script id="lecang-content-embed"[^>]*>[\s\S]*?<\/script>/,
+                    '<script id="lecang-content-embed" type="application/json">' + JSON.stringify(content || {}) + '</script>');
+                if (injected === html) return { success: true };
+                const r = await fetch(url, {
+                    method: 'PUT',
+                    headers: this._ghHeaders(),
+                    body: JSON.stringify({ message: '内联最新内容到 index.html ' + new Date().toISOString(), content: this._b64encode(injected), sha: sha || undefined }),
+                    signal: this._timeoutSignal(20000)
+                });
+                if (r.ok) return { success: true };
+                let msg = ''; try { msg = (await r.json()).message || ''; } catch (e) {}
+                lastErr = 'index.html 写入失败 ' + r.status + (msg ? '：' + msg : '');
+            } catch (e) { lastErr = 'index.html 网络错误：' + e.message; }
+        }
+        return { success: false, error: lastErr };
+    },
     // ===== 统一分发（按当前云端类型）=====
     async readContent() {
         const m = this.getMode();
