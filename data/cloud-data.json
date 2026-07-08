@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783516934789,
+    "updatedAt": 1783517731302,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -130,8 +130,15 @@
     "product8-badge": "老料专属",
     "product8-image": "/data/uploads/1_jpg-1783515503235-lu7jzl.jpg",
     "product8-link": "",
-    "product8-contact": "1"
+    "product8-contact": "1",
+    "product9-name": "土豪猴头",
+    "product9-desc": "桩型饱满肌理厚实，皮质红润油光内敛。精品土豪猴头，12mm 规整尺寸，盘玩易出玉化包浆，自留赏玩皆宜。",
+    "product9-price": "1798",
+    "product9-badge": "高性价比",
+    "product9-image": "/data/uploads/________8__jpg-1783517646847-k2aion.jpg",
+    "product9-link": "",
+    "product9-contact": "1"
   },
   "submissions": [],
-  "updatedAt": 1783517731316
+  "updatedAt": 1783517734810
 }
