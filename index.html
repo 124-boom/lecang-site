@@ -320,6 +320,8 @@
             color: var(--warm-brown);
             font-size: 16px;
             line-height: 1.9;
+            white-space: pre-wrap;     /* 保留后台输入的多行描述，不挤成一段 */
+            word-break: break-word;
         }
 
         .container {
@@ -413,6 +415,8 @@
             color: var(--warm-brown);
             margin-bottom: 18px;
             line-height: 1.7;
+            white-space: pre-wrap;     /* 保留后台输入的产品描述换行 */
+            word-break: break-word;
         }
 
         .product-meta {
@@ -1062,6 +1066,14 @@
             .contact-form {
                 padding: 28px;
             }
+        }
+
+        /* 手机端：验证码题目独占一行，输入框占满剩余宽度，客户能看清自己填的内容 */
+        @media (max-width: 600px) {
+            .captcha-row { flex-wrap: wrap; gap: 8px; }
+            .captcha-question { flex: 1 1 100%; min-width: 0; text-align: center; }
+            .captcha-row input { flex: 1 1 auto; min-width: 0; font-size: 16px; }
+            .captcha-refresh { flex: 0 0 auto; }
         }
 
         /* Mobile Menu */
