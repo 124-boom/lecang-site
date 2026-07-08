@@ -2503,14 +2503,16 @@
         // 关键：以“本地为准”整体覆盖，而不是用并集合并——
         // 否则云端那条没删成功的记录会被合并回来，造成“删了还在”。
         async function persistSubmissions() {
-            // 1) 本机服务器（若在线，免密）
+            // 1) 本机服务器（若在线，免密）—— 优先落本机，保证线索不丢
             if (serverOnline) {
                 await apiPost('/api/submissions-replace', customers).catch(() => {});
             }
-            // 2) 云端（按当前类型：local→本机/api，server→云端，github→github）
+            // 2) 云端（跨设备镜像）改为【后台异步】：本机已落盘，不阻塞保存；
+            //    失败仅记日志，可到「数据同步」重试，绝不让云端慢/限流拖垮保存。
             if (CloudSync.isConfigured()) {
-                const r = await CloudSync.writeSubmissions(customers);
-                if (!r || !r.success) return { success: false, error: (r && r.error) || '未知错误' };
+                CloudSync.writeSubmissions(customers)
+                    .then(r => { if (!r || !r.success) console.warn('[lecang] 客户线索云端镜像失败：', (r && r.error) || ''); })
+                    .catch(e => console.warn('[lecang] 客户线索云端镜像异常：', e.message));
             }
             return { success: true };
         }
