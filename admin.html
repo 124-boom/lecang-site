@@ -833,7 +833,7 @@
                         <p>② 保存后数据会自动同步到前台页面 <code style="background:var(--cream);padding:2px 8px;border-radius:4px;color:var(--deep-red);">index.html</code>，刷新前台即可看到更新</p>
                         <p>③ 点击「恢复默认」可将所有内容重置为初始状态</p>
                         <p>④ 点击「导出配置」可下载当前所有内容的 JSON 文件，方便备份</p>
-                        <p>⑤ 产品模块支持新增和删除，最多展示 8 个产品</p>
+                        <p>⑤ 产品模块支持新增和删除，最多展示 16 个产品</p>
                         <p>⑥ 产品和禅意空间均支持上传图片（不超过 2MB），不上传则显示默认样式</p>
                         <p>⑦ 货币符号可在「品牌信息」中自定义修改</p>
                         <p>⑧ 每次保存会自动记录提交时间和内容，在「提交记录」中可查看并导出 Excel 表格</p>
@@ -1470,6 +1470,7 @@
         // 这样在「GitHub 后台」也能读到客户留言。本地 / 花生壳域名仍走相对路径。
         const SERVER_ORIGIN = 'https://74781265sopc.vicp.fun';
         const API_BASE = (location.hostname.endsWith('github.io')) ? SERVER_ORIGIN : '';
+        const MAX_PRODUCTS = 16; // 产品数量上限：后台可新增/删除，前端按此动态渲染（改这里即可调整上限）
 
         // 浏览器兼容的超时信号（旧浏览器无 AbortSignal.timeout 时降级为无超时，避免报错伪装成“无法连接”）
         function makeTimeout(ms) {
@@ -1725,12 +1726,25 @@
                 } catch (e) { ghClientErr = e.message; }
             }
 
-            // 3) 原有「内网穿透服务器」云端合并逻辑（保留，确保线索等一致）
+            // 3) 云端设备同步（多设备互通）。关键修复：若「云端」就是本机保存目标同一台服务器，
+            //    步骤1已写入同一台，再跑双向同步只是重复 4~5 次穿透往返 → 卡慢甚至失败，直接跳过。
+            //    若云端指向另一台设备，则做「仅上传」并加 20s 超时；失败不阻断保存（可到数据同步重试）。
             const cloudConfigured = CloudSync.isConfigured() || CloudSync.hasCloud();
             let cloudErr = '';
             if (Object.keys(htmlData).length > 0 && CloudSync.getMode() !== 'github' && CloudSync.hasCloud()) {
-                const r = await CloudSync.syncBidirectional('up');
-                if (!r.success) cloudErr = '同步云端失败：' + (r.error || '');
+                if (isCloudSameAsLocal()) {
+                    // 云端与本机保存目标同一台服务器：步骤1已覆盖，跳过冗余同步
+                } else {
+                    try {
+                        const r = await Promise.race([
+                            CloudSync.syncBidirectional('up'),
+                            new Promise((_, rej) => setTimeout(() => rej(new Error('云端同步超时')), 20000))
+                        ]);
+                        if (!r.success) cloudErr = '同步云端失败：' + (r.error || '');
+                    } catch (e) {
+                        cloudErr = '同步云端超时（可到「数据同步」重试）';
+                    }
+                }
             }
 
             // 提交记录（客户咨询）也要随“保存”固化：以本地为准全量写回本机+云端。
@@ -1783,7 +1797,7 @@
             }
 
             if (cloudErr) {
-                setSaveStatus('saved', pubMsg + ' · 云端线索同步失败');
+                setSaveStatus('saved', pubMsg + ' · 云端同步未完成（可到数据同步重试）');
             } else if (ghClientErr && !ghOk) {
                 setSaveStatus('saved', pubMsg + ' · GitHub 发布失败');
             } else {
@@ -1795,8 +1809,13 @@
 
             // ===== Toast 汇总 =====
             let toastMsg, toastType;
-            if (cloudErr) {
-                toastMsg = '已保存，但云端线索同步失败：' + cloudErr;
+            const published = serverOnline || ghOk;
+            if (cloudErr && published) {
+                // 内容已发布到公网，仅云端设备同步未成功 → 成功提示 + 软提醒（不再报“保存失败”）
+                toastMsg = '已保存并发布到公网 ✓' + (CloudSync.hasGitHub() ? '（花生壳 + GitHub Pages 双部署）' : '（花生壳公网）') + '，云端设备同步需稍后到「数据同步」重试';
+                toastType = 'success';
+            } else if (cloudErr && !published) {
+                toastMsg = '已保存，但云端同步失败：' + cloudErr;
                 toastType = 'error';
             } else if (ghClientErr && !ghOk) {
                 toastMsg = (serverOnline ? '花生壳公网已更新，' : '') + '但 GitHub Pages 发布失败：' + ghClientErr;
@@ -1887,10 +1906,28 @@
 
         function getProductCount() {
             let count = 0;
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= MAX_PRODUCTS; i++) {
                 if (currentContent['product' + i + '-name']) count = i;
             }
             return count;
+        }
+
+        // 判断「云端(内网穿透)地址」是否与「本机保存目标」是同一台服务器。
+        // 若是同一台，保存步骤1已写入，无需再做双向同步（否则重复 4~5 次穿透往返，卡慢/失败）。
+        function isCloudSameAsLocal() {
+            try {
+                if (CloudSync.getMode() !== 'server') return false;
+                const w = CloudSync.config.workerUrl || '';
+                if (!w) return false;
+                const cloudHost = new URL(w).host;
+                let localHost;
+                if (typeof API_BASE === 'string' && API_BASE.indexOf('http') === 0) {
+                    localHost = new URL(API_BASE).host;
+                } else {
+                    localHost = location.host;
+                }
+                return cloudHost === localHost;
+            } catch (e) { return false; }
         }
 
         // 资源路径归一化：把以 "/" 开头的绝对路径按当前页面目录重新拼接，
@@ -1964,7 +2001,7 @@
 
             // Show/hide add button
             const addBtn = document.getElementById('addProductBtn');
-            if (count >= 8) {
+            if (count >= MAX_PRODUCTS) {
                 addBtn.style.display = 'none';
             } else {
                 addBtn.style.display = 'block';
@@ -1976,7 +2013,7 @@
 
         function addProduct() {
             const count = getProductCount();
-            if (count >= 8) return;
+            if (count >= MAX_PRODUCTS) return;
             const newIdx = count + 1;
             currentContent['product' + newIdx + '-name'] = '新产品';
             currentContent['product' + newIdx + '-desc'] = '请输入产品描述';
@@ -2214,8 +2251,8 @@
             'products-title': '产品区中文标题',
             'products-desc': '产品区描述'
         };
-        // Dynamically add product fields (1-8)
-        for (let i = 1; i <= 8; i++) {
+        // Dynamically add product fields (1..MAX_PRODUCTS)
+        for (let i = 1; i <= MAX_PRODUCTS; i++) {
             fieldLabels['product'+i+'-name'] = '产品'+i+'名称';
             fieldLabels['product'+i+'-price'] = '产品'+i+'价格';
             fieldLabels['product'+i+'-badge'] = '产品'+i+'标签';
