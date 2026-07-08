@@ -118,6 +118,17 @@
     "product6-link": "",
     "product6-contact": "1"
   },
-  "submissions": [],
-  "updatedAt": 1783499383738
+  "submissions": [
+    {
+      "id": 1783513521341,
+      "name": "测试",
+      "phone": "2024",
+      "wechat": "",
+      "product": "",
+      "message": "",
+      "time": "2026-07-08 20:25:21",
+      "timestamp": 1783513521341
+    }
+  ],
+  "updatedAt": 1783513582252
 }
