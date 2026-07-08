@@ -1603,7 +1603,11 @@
             document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.dataset.key;
                 if (currentContent[key] !== undefined) {
-                    el.value = currentContent[key];
+                    if (el.type === 'checkbox') {
+                        el.checked = !!currentContent[key] && currentContent[key] !== '0' && currentContent[key] !== 'false';
+                    } else {
+                        el.value = currentContent[key];
+                    }
                 }
             });
         }
@@ -1613,7 +1617,11 @@
             const data = { ...currentContent };
             document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.dataset.key;
-                data[key] = el.value;
+                if (el.type === 'checkbox') {
+                    data[key] = el.checked ? '1' : '';
+                } else {
+                    data[key] = el.value;
+                }
             });
             return data;
         }
@@ -1882,8 +1890,8 @@
             return count;
         }
 
-                // 资源路径归一化：把以 "/" 开头的绝对路径按当前页面目录重新拼接，
-        // 修复 GitHub Pages 项目页（/repo/ 子路径）下图片 404 的问题。
+        // 资源路径归一化：把以 "/" 开头的绝对路径按当前页面目录重新拼接，
+        // 修复 GitHub Pages 项目页（/repo/ 子路径）下图片预览 404 的问题。
         function resolveAsset(url) {
             if (!url) return url;
             if (/^https?:\/\//i.test(url) || url.startsWith('//')) return url;
@@ -1893,7 +1901,8 @@
             }
             return url;
         }
-function renderProducts() {
+
+        function renderProducts() {
             const container = document.getElementById('productList');
             container.innerHTML = '';
             const count = getProductCount();
@@ -1908,7 +1917,7 @@ function renderProducts() {
                         <label>产品图片 <span class="hint">可选，不上传则显示默认样式</span></label>
                         <div class="image-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('product-file-${i}').click()">
                             ${hasImg
-                                ? `<img src="${hasImg}" class="preview-img" alt="产品图片">`
+                                ? `<img src="${resolveAsset(hasImg)}" class="preview-img" alt="产品图片">`
                                 : `<div class="upload-placeholder"><span class="upload-icon">📷</span>点击上传产品图片</div>`}
                         </div>
                         <input type="file" accept="image/*" id="product-file-${i}" style="display:none;" onchange="handleImageUpload(event, '${imgKey}')">
@@ -1933,8 +1942,13 @@ function renderProducts() {
                         <textarea data-key="product${i}-desc" rows="2" placeholder="产品描述">${currentContent['product'+i+'-desc'] || ''}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>跳转链接 <span class="hint">可选 · 填写后前台「查看详情」将跳转到此链接；留空则不显示该按钮</span></label>
+                        <label>跳转链接 <span class="hint">可选 · 填写后前台「查看详情」将跳转到此链接；留空则按下方「跳转联系我们」设置处理</span></label>
                         <input type="text" data-key="product${i}-link" value="${currentContent['product'+i+'-link'] || ''}" placeholder="如 https://你的商品详情页 或 /product/123">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;margin-top:10px;">
+                            <input type="checkbox" data-key="product${i}-contact" ${currentContent['product'+i+'-contact'] ? 'checked' : ''}> 未填链接时，前台「查看详情」跳转至「联系我们」
+                        </label>
                     </div>
                     ${count > 1 ? `<div class="product-actions">
                         <button class="btn btn-danger btn-sm" onclick="removeProduct(${i})">删除此产品</button>
@@ -1982,6 +1996,7 @@ function renderProducts() {
                 currentContent['product' + i + '-badge'] = currentContent['product' + next + '-badge'] || '';
                 currentContent['product' + i + '-image'] = currentContent['product' + next + '-image'] || '';
                 currentContent['product' + i + '-link'] = currentContent['product' + next + '-link'] || '';
+                currentContent['product' + i + '-contact'] = currentContent['product' + next + '-contact'] || '';
             }
             // Clear last
             delete currentContent['product' + count + '-name'];
@@ -1990,6 +2005,7 @@ function renderProducts() {
             delete currentContent['product' + count + '-badge'];
             delete currentContent['product' + count + '-image'];
             delete currentContent['product' + count + '-link'];
+            delete currentContent['product' + count + '-contact'];
             renderProducts();
             markUnsaved();
             showToast('产品已删除，请保存以生效', 'success');
@@ -2080,7 +2096,7 @@ function renderProducts() {
                     <label>图片 ${i}</label>
                     <div class="image-upload-box gallery-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('gallery-file-${i}').click()">
                         ${hasImg
-                            ? `<img src="${hasImg}" class="preview-img" alt="禅意图片"><div class="preview-watermark">${currentContent['gallery'+i+'-watermark'] || chars[i-1]}</div>`
+                            ? `<img src="${resolveAsset(hasImg)}" class="preview-img" alt="禅意图片"><div class="preview-watermark">${currentContent['gallery'+i+'-watermark'] || chars[i-1]}</div>`
                             : `<div class="upload-placeholder"><span class="upload-icon">🖼️</span>点击上传图片</div>`}
                     </div>
                     <input type="file" accept="image/*" id="gallery-file-${i}" style="display:none;" onchange="handleImageUpload(event, '${imgKey}')">
