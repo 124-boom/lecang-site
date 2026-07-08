@@ -1456,8 +1456,12 @@
         }
 
         // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→隐藏按钮
+        // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→仍显示并跳转后端商品页
         function applyProductLinks(data) {
             if (!data) return;
+            const backBase = (location.hostname.indexOf('github.io') > -1)
+                ? 'https://124-boom.github.io/lecang-site/admin.html'
+                : (location.protocol + '//' + location.host + '/admin.html');
             for (let i = 1; i <= 8; i++) {
                 const btn = document.querySelector('[data-product-link-btn="' + i + '"]');
                 if (!btn) continue;
@@ -1473,10 +1477,14 @@
                         return function () { window.open(url, '_blank', 'noopener'); };
                     })(link);
                 } else {
-                    btn.style.display = 'none';
+                    // 未配置外部跳转链接：按钮依然显示，默认跳转到后端商品页（查看/编辑）
+                    btn.style.display = '';
                     btn.classList.remove('has-link');
-                    btn.onclick = null;
+                    btn.title = '查看商品详情（未配置外部链接，已跳转后台）';
                     btn.innerHTML = '查看详情';
+                    btn.onclick = (function (url) {
+                        return function () { window.open(url, '_blank', 'noopener'); };
+                    })(backBase);
                 }
             }
         }
