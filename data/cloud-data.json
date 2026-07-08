@@ -21,7 +21,7 @@
     "product3-name": "星月菩提",
     "product3-desc": "同树同枝小冰糖星月，单珠8×7mm，老型桶珠，共 28 颗，正月通体大留白，针尖细星、烟花稀少，品相干净。把玩温润，静心赏玩，是修行者的首选。",
     "product3-price": "998",
-    "product3-badge": "新品",
+    "product3-badge": "常年热销",
     "product4-name": "沉香念珠",
     "product4-desc": "油膏片状凝润饱满，香韵馥郁清冽入心。达拉干正区沉水老料，单株尺寸约0.6mm ，共 108 颗念珠，醇化充足油脂丰厚，凉韵带绵柔奶香，常温香气明晰穿透力佳，持珠品嗅，心绪平和舒缓。",
     "product4-price": "5500",
@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783496525027,
+    "updatedAt": 1783497409632,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -103,13 +103,14 @@
     "product3-contact": "1",
     "product4-contact": "1",
     "product4-image": "/data/uploads/________4__jpg-1783491838013-v1em5c.jpg",
-    "product5-name": "新产品",
-    "product5-desc": "请输入产品描述",
-    "product5-price": "0",
-    "product5-badge": "新品",
+    "product5-name": "凤眼",
+    "product5-desc": "籽质紧实圆润饱满，星耀款实心小凤眼。10mm 规整尺寸，颗颗甄选，持握盘玩，温润雅致。",
+    "product5-price": "4800",
+    "product5-badge": "大众挚爱",
     "product5-link": "",
-    "product5-contact": ""
+    "product5-contact": "1",
+    "product5-image": "/data/uploads/________5__jpg-1783497213898-rp7vfm.jpg"
   },
   "submissions": [],
-  "updatedAt": 1783496539330
+  "updatedAt": 1783497417648
 }
