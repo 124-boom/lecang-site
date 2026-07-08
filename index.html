@@ -1424,6 +1424,7 @@
         // 域名仍走相对路径，行为不变。
         const SERVER_ORIGIN = 'https://74781265sopc.vicp.fun';
         const API_BASE = (location.hostname.endsWith('github.io')) ? SERVER_ORIGIN : '';
+        const MAX_PRODUCTS = 16; // 与后台一致：产品数量上限，前端按此动态渲染
         let serverOnline = false;
 
         // 兼容写法：旧浏览器/微信内核不支持 AbortSignal.timeout()，直接调用会同步抛错，
@@ -1517,7 +1518,7 @@
             const grid = document.querySelector('.products-grid');
             if (!grid) return;
             let count = 0;
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= MAX_PRODUCTS; i++) {
                 if (data && data['product' + i + '-name']) count = i;
             }
             if (count === 0) return; // 无数据时保留 HTML 中的硬编码骨架（fallback，避免空白）
@@ -1573,7 +1574,7 @@
         //   3) 未填链接 + 未勾选 → 按钮仍显示，但点击不跳转（留在原页面）
         function applyProductLinks(data) {
             if (!data) return;
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= MAX_PRODUCTS; i++) {
                 const btn = document.querySelector('[data-product-link-btn="' + i + '"]');
                 if (!btn) continue;
                 const link = (data['product' + i + '-link'] || '').trim();
