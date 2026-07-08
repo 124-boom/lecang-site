@@ -104,6 +104,17 @@
     "product4-contact": "1",
     "product4-image": "/data/uploads/________3__jpg-1783483317060-h8p0zn.jpg"
   },
-  "submissions": [],
-  "updatedAt": 1783491277961
+  "submissions": [
+    {
+      "id": 1783491599810,
+      "name": "测试",
+      "phone": "141906",
+      "wechat": "",
+      "product": "",
+      "message": "",
+      "time": "2026-07-08 14:19:59",
+      "timestamp": 1783491599810
+    }
+  ],
+  "updatedAt": 1783491600488
 }
