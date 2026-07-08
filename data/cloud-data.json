@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783514938358,
+    "updatedAt": 1783515694949,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -123,8 +123,15 @@
     "product7-badge": "口碑爆款",
     "product7-image": "/data/uploads/________7__jpg-1783514768041-5xan1x.jpg",
     "product7-link": "",
-    "product7-contact": "1"
+    "product7-contact": "1",
+    "product8-name": "五眼天珠",
+    "product8-desc": "包浆温润凝润岁月，图腾藏纳雪域吉光。藏区回流五眼天珠，老料高油质地醇厚，尺寸 40×11 毫米重 7 克，护身改运灵气天成，佩戴珍藏，福运绵长。",
+    "product8-price": "688",
+    "product8-badge": "老料专属",
+    "product8-image": "/data/uploads/1_jpg-1783515503235-lu7jzl.jpg",
+    "product8-link": "",
+    "product8-contact": "1"
   },
   "submissions": [],
-  "updatedAt": 1783514951307
+  "updatedAt": 1783515703614
 }
