@@ -1466,6 +1466,7 @@
                     return;
                 }
             } catch (e) { /* 无服务器（如 GitHub Pages）走前端回退 */ }
+            // 回退：纯前端算术题，至少拦住手动刷屏 / 最简单的脚本
             const a = 1 + Math.floor(Math.random() * 9);
             const b = 1 + Math.floor(Math.random() * 9);
             captcha = { token: '', answer: a + b, server: false };
@@ -1679,12 +1680,13 @@
             document.addEventListener('visibilitychange', () => { if (!document.hidden) pollContent(); });
         }
 
-                async function handleSubmit(e) {
+        async function handleSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const successMsg = document.getElementById('formSuccess');
             const capInput = document.getElementById('captchaAnswer');
 
+            // —— 客户端先校验验证码（无服务器时这是唯一闸门；有服务器时作预检）——
             const capVal = (capInput ? capInput.value : '').trim();
             if (!capVal) {
                 showCaptchaError('请先填写验证码');
@@ -1725,6 +1727,7 @@
             btn.textContent = '提交咨询';
 
             if (resp.ok && resp.json && resp.json.success) {
+                // 本机已保存；若配置了云端，用服务端归一化后的同一条记录推送，避免重复
                 if (CloudSync.hasCloud() && resp.json.submission) {
                     CloudSync.addSubmission(resp.json.submission).catch(() => {});
                 }
@@ -1736,12 +1739,14 @@
                 return;
             }
 
+            // 服务端明确返回验证码错误：提示并刷新，绝不写入本机当成功
             if (resp.json && resp.json.error && /验证码/.test(resp.json.error)) {
                 showCaptchaError(resp.json.error);
                 loadCaptcha();
                 return;
             }
 
+            // 其它失败（服务器未启动等）：存到本机，联网后可在后台上传
             const now = new Date();
             const pad = n => String(n).padStart(2, '0');
             const localSub = {
@@ -1786,7 +1791,7 @@
         });
 
         // Initialize
-                document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             await checkServerStatus();
             await loadSavedContent();
             startContentPoller();
