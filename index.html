@@ -1418,7 +1418,18 @@
         }
 
         // Apply content data to DOM (reads from backend/cloud sync)
-        function applyContent(data) {
+                // 资源路径归一化：把以 "/" 开头的绝对路径按当前页面目录重新拼接，
+        // 修复 GitHub Pages 项目页（/repo/ 子路径）下图片 404 的问题。
+        function resolveAsset(url) {
+            if (!url) return url;
+            if (/^https?:\/\//i.test(url) || url.startsWith('//')) return url;
+            if (url.startsWith('/')) {
+                const base = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+                return base + url.slice(1);
+            }
+            return url;
+        }
+function applyContent(data) {
             if (!data) return;
             document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.dataset.key;
@@ -1430,7 +1441,7 @@
             document.querySelectorAll('[data-img-key]').forEach(img => {
                 const key = img.dataset.imgKey;
                 if (data[key]) {
-                    img.src = data[key];
+                    img.src = resolveAsset(data[key]);
 
                     img.loading = 'lazy';
 
