@@ -9,7 +9,7 @@
     "hero-btn-2": "联系定制",
     "products-tag": "BOUTIQUE COLLECTION",
     "products-title": "精品佛珠",
-    "products-desc": "每一串佛珠，都承载着制珠人的虔诚与专注。从选材到��珠，历经数十道工序，只为呈现最温润的触感与最庄严的法相。",
+    "products-desc": "每一串佛珠，都承载着制珠人的虔诚与专注。从选材到成珠，历经数十道工序，只为呈现最温润的触感与最庄严的法相。",
     "product1-name": "小叶紫檀 108 颗",
     "product1-desc": "印度老料小叶紫檀老型桶珠，无胶无蜡原汁原味，满金星，高油高密，木质细腻。单珠8×9mm，共 108 颗念珠，质感温润，静心把玩。",
     "product1-price": "1688",
@@ -23,8 +23,8 @@
     "product3-price": "998",
     "product3-badge": "新品",
     "product4-name": "沉香念珠",
-    "product4-desc": "天然沉香，香气清雅绵长。沉香通三界，闻之令人身心俱静，是礼佛、品茗、冥想的绝佳伴侣。",
-    "product4-price": "3,580",
+    "product4-desc": "虎纹交错浑然天成，膏脂饱满油润通透。芽庄棋楠沉水老料，千年醇化质地紧实，满布虎纹油线，香气层次丰盈，蜜甜花果韵悠长清透，佩戴品闻，静心养生，馈赠典藏两相宜。",
+    "product4-price": "6280",
     "product4-badge": "臻选",
     "about-title": "关于乐藏",
     "about-p1": "乐藏，取自\"以乐为藏，藏心于珠\"。我们相信，每一颗佛珠都是一座小小的禅堂，手指轻拨之间，便能与内心深处的宁静相遇。",
@@ -35,7 +35,7 @@
     "feature1-desc": "源头直采，杜绝以次充好，每一颗珠子皆真材实料。",
     "feature2-icon": "工",
     "feature2-title": "匠心工艺",
-    "feature2-desc": "数十道工序精细打���，孔道端正，珠形圆润。",
+    "feature2-desc": "数十道工序精细打磨，孔道端正，珠形圆润。",
     "feature3-icon": "诚",
     "feature3-title": "诚信经营",
     "feature3-desc": "明码标价，如实描述，支持七天无理由退换。",
@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783481849946,
+    "updatedAt": 1783483463643,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -101,8 +101,9 @@
     "product1-contact": "1",
     "product2-contact": "1",
     "product3-contact": "1",
-    "product4-contact": "1"
+    "product4-contact": "1",
+    "product4-image": "/data/uploads/________3__jpg-1783483317060-h8p0zn.jpg"
   },
   "submissions": [],
-  "updatedAt": 1783481854988
+  "updatedAt": 1783483464776
 }
