@@ -1454,8 +1454,6 @@
             // 商品「查看详情」跳转链接（对应后台“跳转链接”，可选）
             applyProductLinks(data);
         }
-
-        // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→隐藏按钮
         // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→仍显示并跳转后端商品页
         function applyProductLinks(data) {
             if (!data) return;
