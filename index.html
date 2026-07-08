@@ -1511,9 +1511,40 @@
             return url; // 相对路径原样
         }
 
+        // 按内容数据动态生成商品卡片（数量由 product1..8-name 决定，与后台 getProductCount 一致）
+        // 修复"后台新增商品但前端只硬编码 4 个卡片导致不显示"的 bug
+        function renderProductCards(data) {
+            const grid = document.querySelector('.products-grid');
+            if (!grid) return;
+            let count = 0;
+            for (let i = 1; i <= 8; i++) {
+                if (data && data['product' + i + '-name']) count = i;
+            }
+            if (count === 0) return; // 无数据时保留 HTML 中的硬编码骨架（fallback，避免空白）
+            let html = '';
+            for (let i = 1; i <= count; i++) {
+                html += '<div class="product-card">' +
+                    '<div class="product-image">' +
+                    '<img class="product-img" data-img-key="product' + i + '-image" alt="">' +
+                    '<span class="product-badge" data-key="product' + i + '-badge">新品</span>' +
+                    '</div>' +
+                    '<div class="product-info">' +
+                    '<h3 class="product-name" data-key="product' + i + '-name">产品' + i + '</h3>' +
+                    '<p class="product-desc" data-key="product' + i + '-desc"></p>' +
+                    '<div class="product-meta">' +
+                    '<span class="product-price"><span class="currency-symbol" data-key="currency-symbol">¥</span><span data-key="product' + i + '-price">0</span></span>' +
+                    '<button class="product-btn" data-product-link-btn="' + i + '">查看详情</button>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
         // Apply content data to DOM (reads from backend/cloud sync)
         function applyContent(data) {
             if (!data) return;
+            renderProductCards(data); // 先按数据重建商品卡片，再填值（修复新增商品不显示）
             document.querySelectorAll('[data-key]').forEach(el => {
                 const key = el.dataset.key;
                 if (data[key] !== undefined && data[key] !== '') {
