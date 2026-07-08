@@ -1419,7 +1419,11 @@
     <script src="cloud-sync.js"></script>
     <script>
         // ===== API helpers =====
-        const API_BASE = '';
+        // GitHub Pages 是纯静态站、没有后台：当页面托管在 github.io 时，把接口指向家常开的
+        // 花生壳服务器，客户留言才能真正进入本机后台（服务器已开启跨域 CORS）。本地 / 花生壳
+        // 域名仍走相对路径，行为不变。
+        const SERVER_ORIGIN = 'https://74781265sopc.vicp.fun';
+        const API_BASE = (location.hostname.endsWith('github.io')) ? SERVER_ORIGIN : '';
         let serverOnline = false;
 
         // 兼容写法：旧浏览器/微信内核不支持 AbortSignal.timeout()，直接调用会同步抛错，
@@ -1731,6 +1735,7 @@
                 if (CloudSync.hasCloud() && resp.json.submission) {
                     CloudSync.addSubmission(resp.json.submission).catch(() => {});
                 }
+                successMsg.innerHTML = '✓ 感谢您的留言！乐藏客服会尽快与您联系。';
                 successMsg.classList.add('show');
                 e.target.reset();
                 showCaptchaError('');
@@ -1756,6 +1761,8 @@
                 timestamp: now.getTime()
             };
             CloudSync.addSubmissionLocal(localSub);
+            // 仅本机暂存（后台不可达）：如实提示，不谎报“提交成功”
+            successMsg.innerHTML = '✓ 已存入本机（后台暂不可达，联网后将自动同步到后台）';
             successMsg.classList.add('show');
             e.target.reset();
             loadCaptcha();
