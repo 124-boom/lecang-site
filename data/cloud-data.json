@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783497409632,
+    "updatedAt": 1783499370408,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -109,8 +109,15 @@
     "product5-badge": "大众挚爱",
     "product5-link": "",
     "product5-contact": "1",
-    "product5-image": "/data/uploads/________5__jpg-1783497213898-rp7vfm.jpg"
+    "product5-image": "/data/uploads/________5__jpg-1783497213898-rp7vfm.jpg",
+    "product6-name": "金刚菩提",
+    "product6-desc": "翠色莹润饱满敦实，形制圆润大气非凡。精品翡翠大苹果，18mm 规整尺寸，品相雄浑大气，把玩观赏皆佳",
+    "product6-price": "888",
+    "product6-badge": "入门优选",
+    "product6-image": "/data/uploads/________6__jpg-1783499012695-1uclkk.jpg",
+    "product6-link": "",
+    "product6-contact": "1"
   },
   "submissions": [],
-  "updatedAt": 1783497422430
+  "updatedAt": 1783499378412
 }
