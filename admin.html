@@ -1466,7 +1466,10 @@
         let customers = [];
 
         // ===== API helpers =====
-        const API_BASE = '';
+        // GitHub Pages 静态站无后台：托管在 github.io 时把接口指向花生壳服务器，
+        // 这样在「GitHub 后台」也能读到客户留言。本地 / 花生壳域名仍走相对路径。
+        const SERVER_ORIGIN = 'https://74781265sopc.vicp.fun';
+        const API_BASE = (location.hostname.endsWith('github.io')) ? SERVER_ORIGIN : '';
 
         // 浏览器兼容的超时信号（旧浏览器无 AbortSignal.timeout 时降级为无超时，避免报错伪装成“无法连接”）
         function makeTimeout(ms) {
