@@ -16,7 +16,7 @@
     "product1-badge": "人气之选",
     "product2-name": "黄花梨极品缨子瘤",
     "product2-desc": "满布缨子瘤疤，荧光通透如玉。黄老油梨，木中黄金，料质莹润玻璃底，颗颗精挑细选，佩戴赏玩，纹理绚烂，传世收藏臻品。",
-    "product2-price": "6666",
+    "product2-price": "28600",
     "product2-badge": "收藏级",
     "product3-name": "星月菩提",
     "product3-desc": "同树同枝小冰糖星月，单珠8×7mm，老型桶珠，共 28 颗，正月通体大留白，针尖细星、烟花稀少，品相干净。把玩温润，静心赏玩，是修行者的首选。",
@@ -78,7 +78,7 @@
     "contact-hours-title": "营业时间",
     "contact-hours": "每日 09:00 - 21:00",
     "footer-copy": "© 2026 乐藏佛珠 LeCang Beads. 保留所有权利。",
-    "updatedAt": 1783492011379,
+    "updatedAt": 1783496525027,
     "gallery1-image": "/data/uploads/gallery1-1783432421309-i9uckh.jpg",
     "gallery1-watermark": "禅",
     "gallery2-watermark": "静",
@@ -102,8 +102,14 @@
     "product2-contact": "1",
     "product3-contact": "1",
     "product4-contact": "1",
-    "product4-image": "/data/uploads/________4__jpg-1783491838013-v1em5c.jpg"
+    "product4-image": "/data/uploads/________4__jpg-1783491838013-v1em5c.jpg",
+    "product5-name": "新产品",
+    "product5-desc": "请输入产品描述",
+    "product5-price": "0",
+    "product5-badge": "新品",
+    "product5-link": "",
+    "product5-contact": ""
   },
   "submissions": [],
-  "updatedAt": 1783492026583
+  "updatedAt": 1783496533888
 }
