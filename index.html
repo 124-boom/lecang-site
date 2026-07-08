@@ -848,6 +848,46 @@
             transform: none;
         }
 
+        /* 验证码 */
+        .captcha-group { margin-top: 4px; }
+        .captcha-row { display: flex; align-items: center; gap: 10px; }
+        .captcha-question {
+            flex: 0 0 auto;
+            min-width: 150px;
+            padding: 12px 14px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 600;
+            color: var(--deep-red);
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        .captcha-row input {
+            flex: 1 1 auto;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #fff;
+            color: var(--ink);
+        }
+        .captcha-row input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(190,150,90,0.18); }
+        .captcha-refresh {
+            flex: 0 0 auto;
+            width: 46px; height: 46px;
+            border: 1px solid var(--border);
+            background: var(--paper);
+            border-radius: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--deep-red);
+            transition: all .2s ease;
+        }
+        .captcha-refresh:hover { background: var(--deep-red); color: var(--cream); }
+        .captcha-error { color: var(--light-red); font-size: 13px; margin-top: 6px; min-height: 16px; }
+
         .form-success {
             display: none;
             background: rgba(74, 124, 89, 0.15);
@@ -1344,6 +1384,15 @@
                             <label for="message">咨询内容</label>
                             <textarea id="message" name="message" placeholder="请告诉我们您的需求，如佛珠材质、尺寸、预算等"></textarea>
                         </div>
+                        <div class="form-group captcha-group">
+                            <label for="captchaAnswer">验证码 <span style="color:var(--light-red);">*</span></label>
+                            <div class="captcha-row">
+                                <span class="captcha-question" id="captchaQuestion">正在加载验证码…</span>
+                                <input type="text" id="captchaAnswer" inputmode="numeric" autocomplete="off" placeholder="填结果" required>
+                                <button type="button" class="captcha-refresh" id="captchaRefresh" title="换一题">↻</button>
+                            </div>
+                            <div class="captcha-error" id="captchaError"></div>
+                        </div>
                         <button type="submit" class="submit-btn" id="submitBtn">提交咨询</button>
                     </form>
                 </div>
@@ -1398,6 +1447,33 @@
                 if (!res.ok) return null;
                 return await res.json();
             } catch (e) { return null; }
+        }
+
+        // ===== 验证码（服务端算术题优先；无服务器时回退前端算术题）=====
+        let captcha = { token: '', answer: null, server: false };
+        async function loadCaptcha() {
+            const qEl = document.getElementById('captchaQuestion');
+            const iEl = document.getElementById('captchaAnswer');
+            const eEl = document.getElementById('captchaError');
+            if (eEl) eEl.textContent = '';
+            if (iEl) iEl.value = '';
+            try {
+                const r = await fetch(API_BASE + '/api/captcha', { cache: 'no-store' });
+                if (r.ok) {
+                    const d = await r.json();
+                    captcha = { token: d.token || '', answer: null, server: true };
+                    if (qEl) qEl.textContent = d.question || '请完成验证';
+                    return;
+                }
+            } catch (e) { /* 无服务器（如 GitHub Pages）走前端回退 */ }
+            const a = 1 + Math.floor(Math.random() * 9);
+            const b = 1 + Math.floor(Math.random() * 9);
+            captcha = { token: '', answer: a + b, server: false };
+            if (qEl) qEl.textContent = '请输入计算结果：' + a + ' + ' + b + ' = ?';
+        }
+        function showCaptchaError(msg) {
+            const eEl = document.getElementById('captchaError');
+            if (eEl) eEl.textContent = msg || '';
         }
 
         async function checkServerStatus() {
@@ -1603,49 +1679,82 @@
             document.addEventListener('visibilitychange', () => { if (!document.hidden) pollContent(); });
         }
 
-        async function handleSubmit(e) {
+                async function handleSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const successMsg = document.getElementById('formSuccess');
+            const capInput = document.getElementById('captchaAnswer');
+
+            const capVal = (capInput ? capInput.value : '').trim();
+            if (!capVal) {
+                showCaptchaError('请先填写验证码');
+                if (capInput) capInput.focus();
+                return;
+            }
+            if (!captcha.server && String(Number(capVal)) !== String(captcha.answer)) {
+                showCaptchaError('验证码错误，请重新计算');
+                loadCaptcha();
+                return;
+            }
 
             const formData = {
                 name: document.getElementById('name').value,
                 phone: document.getElementById('phone').value,
                 wechat: document.getElementById('wechat').value,
                 product: document.getElementById('product').value,
-                message: document.getElementById('message').value
+                message: document.getElementById('message').value,
+                captchaToken: captcha.token,
+                captchaAnswer: capVal
             };
 
             btn.disabled = true;
             btn.textContent = '正在提交...';
 
-            const result = await apiPost('/api/submit', formData);
+            let resp = { ok: false, status: 0, json: null };
+            try {
+                const r = await fetch(API_BASE + '/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                    signal: makeTimeout(8000)
+                });
+                resp = { ok: r.ok, status: r.status, json: await r.json().catch(() => null) };
+            } catch (err) { resp = { ok: false, status: 0, json: null }; }
 
             btn.disabled = false;
             btn.textContent = '提交咨询';
 
-            if (result && result.success) {
-                // 本机已保存；若配置了云端，用服务端归一化后的同一条记录推送，避免重复
-                if (CloudSync.hasCloud() && result.submission) {
-                    CloudSync.addSubmission(result.submission).catch(() => {});
+            if (resp.ok && resp.json && resp.json.success) {
+                if (CloudSync.hasCloud() && resp.json.submission) {
+                    CloudSync.addSubmission(resp.json.submission).catch(() => {});
                 }
                 successMsg.classList.add('show');
                 e.target.reset();
+                showCaptchaError('');
+                loadCaptcha();
                 setTimeout(() => successMsg.classList.remove('show'), 5000);
-            } else {
-                // 提交失败（服务器未启动等）：先存到本机，联网后可在后台上传
-                const now = new Date();
-                const pad = n => String(n).padStart(2, '0');
-                const submission = {
-                    ...formData,
-                    time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
-                    timestamp: now.getTime()
-                };
-                CloudSync.addSubmissionLocal(submission);
-                successMsg.classList.add('show');
-                e.target.reset();
-                setTimeout(() => successMsg.classList.remove('show'), 5000);
+                return;
             }
+
+            if (resp.json && resp.json.error && /验证码/.test(resp.json.error)) {
+                showCaptchaError(resp.json.error);
+                loadCaptcha();
+                return;
+            }
+
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const localSub = {
+                name: formData.name, phone: formData.phone, wechat: formData.wechat,
+                product: formData.product, message: formData.message,
+                time: now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
+                timestamp: now.getTime()
+            };
+            CloudSync.addSubmissionLocal(localSub);
+            successMsg.classList.add('show');
+            e.target.reset();
+            loadCaptcha();
+            setTimeout(() => successMsg.classList.remove('show'), 5000);
         }
 
         function toggleMobileMenu() {
@@ -1677,10 +1786,13 @@
         });
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
+                document.addEventListener('DOMContentLoaded', async () => {
             await checkServerStatus();
             await loadSavedContent();
             startContentPoller();
+            loadCaptcha();
+            const _cr = document.getElementById('captchaRefresh');
+            if (_cr) _cr.addEventListener('click', loadCaptcha);
         });
     </script>
 
