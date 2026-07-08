@@ -1455,16 +1455,17 @@
             applyProductLinks(data);
         }
         // 将后台配置的 productN-link 接到前台“查看详情”按钮：有链接→新窗口打开；无链接→仍显示并跳转后端商品页
+                // 将后台配置的 productN-link / productN-contact 接到前台“查看详情”按钮：
+        //   1) 填了跳转链接 → 新窗口打开该链接
+        //   2) 未填链接 + 勾选了“跳转联系我们” → 跳到页面内「联系我们」区块
+        //   3) 未填链接 + 未勾选 → 按钮仍显示，但点击不跳转（留在原页面）
         function applyProductLinks(data) {
             if (!data) return;
-            const backBase = (location.hostname.indexOf('github.io') > -1)
-                ? 'https://124-boom.github.io/lecang-site/admin.html'
-                : (location.protocol + '//' + location.host + '/admin.html');
             for (let i = 1; i <= 8; i++) {
                 const btn = document.querySelector('[data-product-link-btn="' + i + '"]');
                 if (!btn) continue;
-                let link = (data['product' + i + '-link'] || '').trim();
-                // 仅允许 http(s)、站内相对路径(/ 开头)或锚点(#) 开头的链接，挡掉 javascript: 等危险协议
+                const link = (data['product' + i + '-link'] || '').trim();
+                const toContact = (String(data['product' + i + '-contact'] || '').trim() === '1') || (data['product' + i + '-contact'] === true);
                 const safe = /^https?:\/\//i.test(link) || /^\//.test(link) || /^#/.test(link);
                 if (link && safe) {
                     btn.style.display = '';
@@ -1472,17 +1473,25 @@
                     btn.title = '查看详情：' + link;
                     btn.innerHTML = '查看详情 <span class="ext-arrow">↗</span>';
                     btn.onclick = (function (url) {
-                        return function () { window.open(url, '_blank', 'noopener'); };
+                        return function (e) { e.preventDefault(); window.open(url, '_blank', 'noopener'); };
                     })(link);
-                } else {
-                    // 未配置外部跳转链接：按钮依然显示，默认跳转到后端商品页（查看/编辑）
+                } else if (toContact) {
                     btn.style.display = '';
                     btn.classList.remove('has-link');
-                    btn.title = '查看商品详情（未配置外部链接，已跳转后台）';
+                    btn.title = '查看详情 · 联系我们';
+                    btn.innerHTML = '联系我们 <span class="ext-arrow">↗</span>';
+                    btn.onclick = function (e) {
+                        e.preventDefault();
+                        const c = document.getElementById('contact');
+                        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        else if (location.hash !== '#contact') location.hash = 'contact';
+                    };
+                } else {
+                    btn.style.display = '';
+                    btn.classList.remove('has-link');
+                    btn.title = '';
                     btn.innerHTML = '查看详情';
-                    btn.onclick = (function (url) {
-                        return function () { window.open(url, '_blank', 'noopener'); };
-                    })(backBase);
+                    btn.onclick = function (e) { e.preventDefault(); /* 留在原页面，不跳转 */ };
                 }
             }
         }
