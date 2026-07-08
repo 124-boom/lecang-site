@@ -473,13 +473,50 @@ const CloudSync = {
     },
     async writeGitHubContent(c) {
         const d = this._safeRaw(await this.readGitHubRaw());
-        d.content = c || {};
+        // 把内联的 base64 图片抽取成仓库文件，避免 cloud-data.json 被撑爆且公网能正常显示
+        const finalContent = await this._extractAndUploadInlineImages(c || {});
+        d.content = finalContent;
         if (!Array.isArray(d.submissions)) d.submissions = [];
         d.updatedAt = Date.now();
         const r = await this.writeGitHub(d);
         // 同时把最新内容内联进 index.html（消除首屏默认模板闪烁）
-        await this.writeGitHubIndex(c || {});
+        await this.writeGitHubIndex(finalContent);
         return r;
+    },
+    // GitHub 后台直接上传的图片以 base64 暂存在内容里；这里把它们抽取成仓库文件
+    // data/uploads/xxx，并把内容里的值改写为 /data/uploads/xxx 的 URL，保证公网可见。
+    async _extractAndUploadInlineImages(content) {
+        if (!content || typeof content !== 'object') return content;
+        const g = this.config.github;
+        if (!g || !g.token || !g.repo) return content; // 无 token 无法上传，保留 base64（至少本地可见）
+        for (const k of Object.keys(content)) {
+            const v = content[k];
+            if (typeof v !== 'string') continue;
+            const m = v.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/);
+            if (!m) continue;
+            const ext = (m[1] === 'jpeg' ? 'jpg' : m[1]).toLowerCase();
+            const b64 = m[2];
+            const fname = 'p' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+            const api = 'https://api.github.com/repos/' + g.repo + '/contents/data/uploads/' + fname;
+            const candidates = (g.proxy || '').trim().replace(/\/+$/, '')
+                ? [(g.proxy.replace(/\/+$/, '') + '/' + api)]
+                : [api, 'https://ghproxy.net/' + api, 'https://gh.api.99988866.xyz/' + api];
+            let ok = false;
+            for (const url of candidates) {
+                try {
+                    const r = await fetch(url, {
+                        method: 'PUT',
+                        headers: this._ghHeaders(),
+                        body: JSON.stringify({ message: '上传图片 ' + fname, content: b64, sha: undefined }),
+                        signal: this._timeoutSignal(20000)
+                    });
+                    if (r.ok) { ok = true; break; }
+                } catch (e) { /* 试下一个候选地址 */ }
+            }
+            if (ok) content[k] = '/data/uploads/' + fname;
+            // 上传失败则保留 base64（至少本地预览可见），不阻断保存
+        }
+        return content;
     },
     async writeGitHubSubs(s) {
         const d = this._safeRaw(await this.readGitHubRaw());
